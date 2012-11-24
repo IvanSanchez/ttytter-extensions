@@ -1,0 +1,1 @@
+Versioned copy of my extensions for ttytter. See http://ivan.sanchezortega.es/ttytter for complete documentation.

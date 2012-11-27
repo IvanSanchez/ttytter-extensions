@@ -233,6 +233,7 @@ $unshort = sub{
 	    ($auth eq "zite.to")	or
 	    ($auth eq "a.eoi.co")	or	# Escuela de Organización Industrial
 	    ($auth eq "amzn.com")	or	# Amazon.com
+	    ($auth eq "bloom.bg")	or	# Bloomberg News
 	    ($auth eq "buswk.co")	or	# Business Week
 	    ($auth eq "cultm.ac")	or	# Cult of Mac
 	    ($auth eq "egent.me")	or
@@ -266,6 +267,7 @@ $unshort = sub{
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "on.rt.com")	or	# RT
+	    ($auth eq "eepurl.com")	or
 	    ($auth eq "feedly.com")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
 	    ($auth eq "on.mash.to")	or	# Mashable

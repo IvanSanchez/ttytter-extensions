@@ -36,7 +36,7 @@
 # TODO: Allow a screen width to be specified, and then don't de-shortify links if the width of the tweet would exceed that. Or get the screen width from the environment somehow.
 # TODO: Add a carriage return (but no line feed) ANSI control char, after the links have been deshortified. If you're writing something while URLs are being resolved, the display will be messed up. Hopefully a CR will help hide the problem. Update: ANSI control chars to move the cursor or clear the current line will fail miserably; all I managed is to add a blank line between tweets. It seems that it has something to do with ReadLine::TTYtter.
 # TODO: Fix TTYtter so that search and tracked keywords are shown with the "Bold on" and "bold off" ANSI sequences instead of "bold on" and "reset". Right now URL underlining will be messed up if the full URL contains the keyword. Hopefully this can be done in 2.1.0 or 2.2.0.
-
+# TODO: Document $extpref_deshortifyretries and related functionality
 
 
 
@@ -64,7 +64,10 @@ elsif ( $ENV{http_proxy} or $ENV{https_proxy} )
 	}
 }
 
-
+if (not $extpref_deshortifyretries)
+{
+	$extpref_deshortifyretries = 3;
+}
 
 require URI::Find;
 
@@ -100,6 +103,40 @@ $store->{cache_flushes} = 0;
 
 
 
+
+
+
+
+
+
+
+# Quick sub to retry unshorting of URLs
+# Called when a HTTP operation failed for any reason; the algorithm will retry a few times (as specified in $extpref_deshortifyretries) before failing.
+$unshort_retry = sub{
+
+	my $url = shift;
+	my $retries_left = shift;
+	my $reason = shift;
+
+	if ($retries_left eq 0)
+	{
+		&$exception(2,"*** Could not deshortify $url further due to $reason\n");
+		return $url;
+	}
+	else
+	{
+		print $stdout, "-- Deshortify failed for $url due to $reason, retrying ($retries_left retries left)\n" if ($verbose);
+		return &$unshort($url, $retries_left-1);
+	}
+	return 0;
+};
+
+
+
+
+
+
+
 # Given a URL, will unshort it.
 $unshort = sub{
 	our $verbose;
@@ -108,6 +145,7 @@ $unshort = sub{
 # 	our $deshortify_cache;
 	our $store;
 	my $url = shift;
+	my $retries_left = shift;
 
 	my $original_url = $url;
 
@@ -116,6 +154,8 @@ $unshort = sub{
 
 # 	print "scheme $scheme auth $auth path $path query $query frag $frag\n" if ($verbose);
 
+	my $unshorting_method = none;
+	my $unshorting_regexp;
 
 	# Gathered a few shorteners. Should not be considered as a comprehensive list, but it'll do.
 	if (($auth eq "g.co")	or	# Google
@@ -165,6 +205,7 @@ $unshort = sub{
 	    ($auth eq "htn.to")	or
 	    ($auth eq "hub.am")	or
 	    ($auth eq "ind.pn")	or	# The Independent.co.uk
+	    ($auth eq "kck.st")	or	# Kickstarter
 	    ($auth eq "kcy.me")	or	# Karmacracy
 	    ($auth eq "mbl.mx")	or
 	    ($auth eq "mun.do")	or	# El Mundo
@@ -181,6 +222,7 @@ $unshort = sub{
 	    ($auth eq "sco.lt")	or
 	    ($auth eq "see.sc")	or
 	    ($auth eq "smf.is")	or	# Summify
+	    ($auth eq "sns.mx")	or	# SNS analytics
 	    ($auth eq "soc.li")	or
 	    ($auth eq "sta.mn")	or	# Stamen - Gotta love these guys' maps!
 	    ($auth eq "tgn.me")	or
@@ -224,12 +266,15 @@ $unshort = sub{
 	    ($auth eq "seen.li")	or	($auth eq "seenthis.net" and $path eq "/index.php")	or # SeenThis, AKA http://seenthis.net/index.php?action=seenli&me=1ing
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
+	    ($auth eq "sml8.it")	or
 	    ($auth eq "tcrn.ch")	or	# Techcrunch
 	    ($auth eq "tiny.cc")	or
 	    ($auth eq "trib.al")	or	($auth =~ m/\.trib\.al$/ )	or	# whatever.trib.al is done by SocialFlow
 	    ($auth eq "vrge.co")	or	# The Verge
 	    ($auth eq "yhoo.it")	or	# Yahoo
 	    ($auth eq "xfru.it")	or
+	    ($auth eq "wapo.st")	or	# Washington Post
+	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
 	    ($auth eq "zite.to")	or
 	    ($auth eq "a.eoi.co")	or	# Escuela de Organización Industrial
 	    ($auth eq "amzn.com")	or	# Amazon.com
@@ -261,8 +306,10 @@ $unshort = sub{
 	    ($auth eq "ymlp.com")	or
 #	    ($auth eq "youtu.be")	or	# This one is actually useful: no information is gained by de-shortening.
 	    ($auth eq "w.abc.es")	or
+	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
 	    ($auth eq "keruff.it")	or
+	    ($auth eq "drudge.tw")	or
 	    ($auth eq "m.safe.mn")	or
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "thebea.st")	or	# The Daily Beast
@@ -291,6 +338,24 @@ $unshort = sub{
 	    ($auth eq "traffic.shareaholic.com")	# Yet another traffic counter
 	    )
 	{
+		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request
+	}
+	elsif ($auth eq "www.snsanalytics.com")
+	{
+		$unshorting_method = "REGEXP";	# For these servers, fetch the page and look for a <input name='url' value='...'> field
+		$unshorting_regexp = qr/<input.* name=["']url["'] .*value=["'](.*?)["'].*/;
+		$unshorting_thing_were_looking_for = "<input name='url'> field";
+	}
+	elsif ($auth eq "www.snsanalytics.com")
+	{
+		$unshorting_method = "REGEXP";	# For these servers, look for the first defined iframe
+		$unshorting_regexp = qr/<iframe .*src=["'](.*?)["'].*>/;
+		$unshorting_thing_were_looking_for = "iframe";
+	}
+
+
+	if (not $unshorting_method eq none)
+	{
 		print $stdout "-- Yo, deshortening $url ($auth)\n" if ($superverbose);
 
 		# Check the cache first.
@@ -299,7 +364,7 @@ $unshort = sub{
 # 			our $deshortify_cache_hit_count;
 			$store->{cache_hit_count} += 1;
 			print $stdout "-- Deshortify cache hit: $url -> " . $deshortify_cache{$original_url} . " ($store->{cache_hit_count} hits)\n" if ($verbose);
-			return &$unshort($deshortify_cache{$original_url});
+			return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries);
 		}
 
 # 		our $deshortify_cache_empty_counter;
@@ -316,8 +381,7 @@ $unshort = sub{
 		}
 
 
-
-		# Visit the link with a HEAD request, see if there's a redirect header. If redirected -> that's the URL we want.
+		# Get the HTTP user agent ready.
 		my $ua = LWP::UserAgent->new;
 		$ua->max_redirect( 0 );	# Don't redirect, just return the headers and look for a "Location:" one manually.
 		$ua->agent( "TTYtter $TTYtter_VERSION URL de-shortifier (" . $ua->agent() . ") (+http://www.floodgap.com/software/ttytter/) (+http://ivan.sanchezortega.es/ttytter/)" ); # Be good net citizens and say how nerdy we are and that we're a bot
@@ -337,26 +401,69 @@ $unshort = sub{
 
 		$ua->cookie_jar({});
 
-		my $request  = HTTP::Request->new( HEAD => "$url" );
-		my $response = $ua->request($request);
 
-# 		if ( $response->previous ) {
-# 		if ( $response->is_success and $response->previous ) {
-		if ($response->header( "Location" )) {
-# 			$url = $response->request->uri;
-			$url = $response->header( "Location" );
-			print "-- Deshortened: $original_url -> $url\n" if ($verbose);
+		if ($unshorting_method eq "HEAD")
+		{
+			# Visit the link with a HEAD request, see if there's a redirect header. If redirected -> that's the URL we want.
 
-			# Add to cache
-			$deshortify_cache{$original_url} = $url;
+			my $request  = HTTP::Request->new( HEAD => "$url" );
+			my $response = $ua->request($request);
 
+	# 		if ( $response->previous ) {
+	# 		if ( $response->is_success and $response->previous ) {
 
-			# Let's run the URL again - maybe this is another short link!
-			return &$unshort($url);
+			if ($response->header( "Location" ))
+			{
+	# 			$url = $response->request->uri;
+				$url = $response->header( "Location" );
+				print "-- Deshortened: $original_url -> $url\n" if ($verbose);
+
+				# Add to cache
+				$deshortify_cache{$original_url} = $url;
+
+				# Let's run the URL again - maybe this is another short link!
+				return &$unshort($url, $extpref_deshortifyretries);
+			}
+			elsif (not $response->is_success)	# Not a HTTP 20X code
+				{ &$unshort_retry($url, $retries_left, $response->status_line); }
+
+		}
+		elsif ($unshorting_method eq "REGEXP")
+		{
+
+			my $response = $ua->get($url);
+
+			if (not $response->is_success)
+				{ &$unshort_retry($url, $retries_left, $response->status_line); }
+
+# 			print $stdout $response->decoded_content if ($verbose);
+
+			my $text = $response->decoded_content;
+
+# 			if ($text =~ m/<iframe .*src="(.*)".*>/i or $text =~ m/<iframe .*src='(.*)'.*>/i)
+			if ($text =~ m/$unshorting_regexp/ig)
+			{
+				my $newurl = $1;
+
+# 				print "Got \"$1\" URL inside an <iframe src=...>";
+				print $stdout, "-- Deshortify found an $unshorting_thing_were_looking_for for $url, and it points to $newurl\n" if ($verbose);
+
+				# If my iframe URL starts with a "/", treat it as a relative URL.
+				if ($newurl =~ m#^/# )
+					{ $newurl = $scheme . "://" . $auth . $newurl; } # becomes http://server/$1
+
+				$newurl =~ s/&amp;/&/;	# Maybe we should escape all HTML entities, but this should suffice.
+
+				# Let's run the URL again - maybe this is another short link!
+				return &$unshort($newurl, $extpref_deshortifyretries);
+			}
+
+			# If no iframes match the regexp above, panic. But just a bit.
+			print $stdout, "-- Deshortify expected an $unshorting_thing_were_looking_for, but none found\n" if ($verbose);
+			return $url;
 		}
 	}
-	# TODO: treat adf.ly links. Pull off the entire page, then run a regexp searching for var url = 'http://adf.ly/go/whatever';
-	else
+	else	# Unrecognised server
 	{
 		print $stdout "-- That URL doesn't seem like it's a URL shortener, it must be the real one.\n" if ($superverbose);
 
@@ -426,7 +533,15 @@ $unshort = sub{
 
 
 
-# Deshortify URLs in both standard tweets and DMs
+
+
+
+
+
+
+
+
+# Deshortify URLs in both standard tweets and DMs, by hooking to both $dmhandle and $handle
 $dmhandle = $handle = sub {
 	our $verbose;
 	our $ansi;
@@ -442,7 +557,7 @@ $dmhandle = $handle = sub {
 	$text =~ s/\\nhttp:\/\//\\n http:\/\//g;
 
 	# Any URIs you find, run them through unshort()...
-	my $finder = URI::Find->new(sub { &$unshort($_[0]) });
+	my $finder = URI::Find->new(sub { &$unshort($_[0], $extpref_deshortifyretries) });
 
 	$how_many_found = $finder->find(\$text);
 
@@ -455,9 +570,6 @@ $dmhandle = $handle = sub {
 
 # 	return $text;
 };
-
-
-
 
 
 
@@ -478,7 +590,7 @@ $addaction = $shutdown = $heartbeat = sub {
 	else
 	{
 		return 0;
-	
+
 # 		print "-- Fetching deshortify cache stats from background process\n" if $verbose;
 # 		$cache_hits  = getbackgroundkey('cache_hit_count');
 # 		$cache_miss  = getbackgroundkey('cache_misses') + (getbackgroundkey('cache_limit') * getbackgroundkey('cache_flushes') );
@@ -494,7 +606,7 @@ $addaction = $shutdown = $heartbeat = sub {
 	print $stdout "-- Deshortify cache stats (hits/misses/flushes/context): $cache_hits/$cache_miss/$cache_flush/$context\n" if $verbose;
 
 	return 0;
-}
+};
 
 
 

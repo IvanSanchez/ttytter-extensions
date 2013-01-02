@@ -297,6 +297,7 @@ $unshort = sub{
 	    ($auth eq "qwapo.es")	or
 	    ($auth eq "rafam.co")	or
 	    ($auth eq "refer.ly")	or
+	    ($auth eq "secby.me")	or	# managed by bit.ly
 	    ($auth eq "short.ie")	or
 	    ($auth eq "short.to")	or
 	    ($auth eq "slate.me")	or	# The Slate

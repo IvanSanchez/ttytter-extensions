@@ -1,4 +1,4 @@
-﻿
+
 #  ----------------------------------------------------------------------------
 #  "THE BEER-WARE LICENSE":
 #  <ivan@sanchezortega.es> wrote this file. As long as you retain this notice you

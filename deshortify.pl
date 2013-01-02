@@ -1,4 +1,4 @@
-﻿
+
 #  ----------------------------------------------------------------------------
 #  "THE BEER-WARE LICENSE":
 #  <ivan@sanchezortega.es> wrote this file. As long as you retain this notice you
@@ -161,6 +161,7 @@ $unshort = sub{
 	if (($auth eq "g.co")	or	# Google
 	    ($auth eq "j.mp")	or
 	    ($auth eq "q.gs")	or
+	    ($auth eq "n.pr")	or	# NPR, National Public Radio (USA)
 	    ($auth eq "t.co")	or	# twitter
 	    ($auth eq "cl.ly")	or
 	    ($auth eq "db.tt")	or
@@ -247,6 +248,7 @@ $unshort = sub{
 	    ($auth eq "econ.st")	or	# The Economist
 	    ($auth eq "engt.co")	or	# Engadget
 # 	    ($auth eq "flic.kr")	or	# Hhhmm, dunno is there's much use in de-shortening to flickr.com anyway.
+	    ($auth eq "flip.it")	or	# Flipboard
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
 	    ($auth eq "imrn.me")	or

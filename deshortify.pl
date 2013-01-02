@@ -335,7 +335,8 @@ $unshort = sub{
 	    ($auth =~ m/^rd\.yahoo\./)	or	# Yahoo feeds... *sigh*
 	    ($auth =~ m/^redirect\./)	or	# redirect.viglink.com and others
 	    ($auth eq "www.google.com" and $path eq "/url")	or	# I hate it when people paste URLs from the stupid google url tracker.
-	    ($auth eq "traffic.shareaholic.com")	# Yet another traffic counter
+	    ($auth eq "traffic.shareaholic.com")	or	# Yet another traffic counter
+	    ($path =~ m#^/wf/click# )	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
 	    )
 	{
 		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request

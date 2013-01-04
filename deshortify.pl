@@ -188,6 +188,7 @@ $unshort = sub{
 	    ($auth eq "bit.ly")	or
 	    ($auth eq "cdb.io")	or
 	    ($auth eq "cgd.to")	or
+	    ($auth eq "chn.ge")	or	# Change.org
 	    ($auth eq "cli.gs")	or
 	    ($auth eq "cor.to")	or
 	    ($auth eq "cos.as")	or
@@ -287,6 +288,7 @@ $unshort = sub{
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
 	    ($auth eq "flpbd.it")	or	# Flipboard
 	    ($auth eq "mcmgz.in")	or	# Mac Magazine
+	    ($auth eq "mbist.ro")	or	# MediaBistro
 	    ($auth eq "menea.me")	or	# Menéame
 	    ($auth eq "mhoff.me")	or
 	    ($auth eq "migre.me")	or

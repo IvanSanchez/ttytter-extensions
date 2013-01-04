@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html>
+<head>
+<style type='text/css'>
+
+code
+{
+  background:#E8E8E8;
+  border:#C0FFC0 dotted 1px;
+}
+
+
+h3
+{
+  margin-top:5em;
+}
+
+p, ul, dl, blockquote
+{
+  margin-left:3em;
+}
+
+dd
+{
+	margin-bottom:1em;
+}
+
+</style>
+<title>Extensions for TTYtter</title>
+</head>
+<body>
+
+<h1>Extensions for TTYtter</h1>
+
+
+
+<p>Hi, this is <a href='http://twitter.com/RealIvanSanchez'>Iván Sánchez</a>, and these are my miscellaneous and geolocation extensions for <a href='http://www.floodgap.com/software/ttytter/'>TTYtter</a>, the amazing text-mode twitter client.</p>
+
+<!--<p>The where.pl and where-inline.pl extensions allow you to see other tweets' locations and do not have any requirements.</p>
+
+<p>gpsd.pl, place.pl, teleport.pl and geoip.pl allow you set the location of your tweets. Your account needs to be geo-enabled, and you should set <code>location=true</code> in your .ttytterrc.</p>
+
+<p>The deshortify.pl extension expands all those t.co URLs into actually useful, informative URLs.</p>-->
+
+
+<table border=0 cellspacing=5><tr>
+<th style='background:#C0C0FF; width:33%;'>Geolocation for tweets</td>
+<th style='background:#C0FFFF; width:33%;'>Sanity extensions</td>
+<th style='background:#C0FFC0; width:33%;'>Miscellaneous stuff</td></tr>
+
+<tr><td style='background:#D8D8FF;'>
+
+<!--<s><div><a href='#where'>where.pl</a></div>
+<div><a href='#whereinline'>where-inline.pl</a></div></s>-->
+<div><a href='#multigeo'>multigeo.pl</a></div>
+
+</td><td style='background:#D8FFFF;'>
+
+<!--<s><div><a href='#gpsd'>gpsd.pl</a></div>
+<div><a href='#place'>place.pl</a></div>
+<div><a href='#teleport'>teleport.pl</a></div>
+<div><a href='#geoip'>geoip.pl</a></div></s>
+<div><a href='#multigeo'>multigeo.pl</a></div>-->
+<div><a href='#deshortify'>deshortify.pl</a></div>
+<div><a href='#autounfollow'>autounfollow.pl</a></div>
+
+</td><td style='background:#D8FFD8;'>
+
+<div><a href='#hipstter'>hipstter.pl</a></div>
+<div><a href='#libcaca'>libcaca avatars</a></div>
+
+</td></tr><tr>
+<td style='background:#D8D8FF;'>This will tell you where other people are tweeting from (geographically). <br/>Also, you can add location metadata to your tweets (in a very easier way than TTYtter's default). Or, said other way, tell other people where you're tweeting from (geographically).<br/>You need you <a href='http://gis.yohman.com/blog/2011/06/16/how-to-geo-enable-your-tweets/'>account to be geo-enabled</a> and run ttytter with <code>location=1</code> for these to work.</td>
+<td style='background:#D8FFFF;'>I couldn't think of using a twitter client without this functionality. In a nutshell: See through link shorteners and mute spammy users forever.</td>
+<td style='background:#D8FFD8;'>Misc funny-slash-weird-slash-useless stuff.</td>
+</tr></table>
+
+<p>Do feel free to contact me if you have any issues with these extensions, or want to send me some beer. Or chocolates or something.</p>
+
+<p>I suggest everyone using ttytter should use multigeo.pl and deshortify.pl. Newcomers to ttytter should download them both and add this line to their .ttytterrc file:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>exts=/path/to/multigeo.pl,/path/to/deshortify.pl</code></p>
+
+<p>However, most ttytter newbies can jump-start their ttytter experience by putting all this in their .ttytterrc file:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>ansi=1
+timestamp=default
+vcheck=1
+ssl=1
+avatar=wget %U -O /tmp/avatar &amp;&amp; img2txt -f utf8 /tmp/avatar
+slowpost=3
+hold=1
+exts=/path/to/multigeo.pl,/path/to/deshortify.pl
+dostream=1</code></p>
+
+
+
+
+
+<hr>
+<a name='requirements'><h3>Requirements</h3></a>
+
+<p>Besides TTYtter and its requirements, you might need additional perl libraries:</p>
+
+<table border=0 cellspacing=5><tr>
+<th style='background:#C0C0FF; width:33%;'>For this extension</td>
+<th style='background:#C0FFFF; width:33%;'>install this package</td>
+<th style='background:#C0FFC0; width:33%;'>or manually run</td></tr>
+
+<tr><td style='background:#E8E8E8;'>
+
+<!-- <div>gpsd.pl</div> -->
+<div>multigeo.pl GPSD functionality</div>
+
+</td><td style='background:#E8E8E8;'>
+
+libnet-gpsd3-perl
+
+</td><td style='background:#E8E8E8;'>
+
+cpan Net::GPSD3
+
+</td></tr><tr><td style='background:#E8E8E8;'>
+
+<!-- <div>geoip.pl</div> -->
+<div>multigeo.pl GeoIP functionality</div>
+
+</td><td style='background:#E8E8E8;'>
+
+libgeo-ip-perl
+
+</td><td style='background:#E8E8E8;'>
+
+cpan Geo::IP
+
+</td></tr><tr><td style='background:#E8E8E8;'>
+
+<div>deshortify.pl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+<div>libwww-perl
+<div>liburi-find-perl
+
+</td><td style='background:#E8E8E8;'>
+
+<div>cpan URI::Find</div>
+<div>cpan URI::Split</div>
+<div>cpan LWP::UserAgent</div>
+
+</td></tr><tr><td style='background:#E8E8E8;'>
+
+<div>autounfollow.pl</div>
+<div>hipstter.pl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+
+</td><td style='background:#E8E8E8;'>
+
+cpan Text::ParseWords
+
+</td></tr></table>
+
+
+
+<hr>
+
+
+<a name='multigeo'><h3>MultiGeo</h3></a>
+
+<p>I found that several of my geo extensions shared code and/or logic and/or global variables, and the proper way to proceed was to unify all those extensions in one. Say hello to <a href='multigeo.pl'>multigeo.pl</a> and download it.</p>
+
+<p>MultiGeo implements the following commands and functionality:</p>
+
+<blockquote>
+
+<h4>Readable location of tweets</h4>
+
+<p>MultiGeo will automatically display the geolocation of tweets in an user-friendly, easy-to-read text string just above the tweet:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>u5+  West Main Street, Madisonville, Madison, Texas, 77864, United States of America
+u5> [2011-10-08 17:47:43] &lt;<strong>+SeanGorman</strong>> @ajturner has gone full cowboy in honor of #ratdiver <a href='http://t.co/KPPCaYCX'>http://t.co/KPPCaYCX</a></code></p>
+
+<p>This works only for geolocated tweets, and uses the multigeo-wide geocoder (see below). The verbosity and detail of the location will depend on the geocoder being used.</p>
+
+<p>There are two kinds of geolocated tweets: those with a pair of (latitude,longitude) coordinates, and those with a Place ID. Place IDs are managed directly by the twitter API and need no name resolution (see this <a href='https://groups.google.com/forum/?fromgroups=#!topic/twitter-api-announce/5_wG5KjLcVA'>old announcement</a> for context). This means that only tweets with lat-lon will be passed to the geocoder for resolution. The geolocation method will depend on the user agent software of the tweeter, and shouldn't matter much to the reader - multigeo.pl will display both types of geolocation the same way. In a nutshell, tweets from the web use Place IDs, whereas tweets from TTYtter (and GPS-enabled mobile clients) use coordinates, and multigeo.pl will display everything. If you need anything else, <code>/dump</code> the tweet or bug me.</p>
+
+<h4>/place</h4>
+
+<p>By typing the command <code>/place [name of the place you're at]</code>, your tweets from that moment on will be geolocated there, for example:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> /place Rio de Janeiro, Brazil &lt;029
+-- Your next tweet will be sent at -22.9112163,-43.2093781, which is near Rio de Janeiro, Brasil, South America (a city)
+TTYtter> Wish my tweets could have a sunbath (testing yet another @ttytter geolocation extension) &lt;088
+-- using lat/long: (-22.9112163, -43.2093781)
+-- waiting 3 seconds to tweet, ^C cancels: "Wish my tweets could have a sunbath (testing yet another @ttytter geolocation extension)"
+-- sending to server
+c2+  Viaduto dos Fuzileiros, Praça da Bandeira, Rio de Janeiro, 20211-445, Brasil
+c2> <span style='color:brown'>[2011-10-14 20:31:16] &lt;<strong>+RealIvanSanchez</strong>> Wish my tweets could have a sunbath (testing yet another @ttytter geolocation extension)</span></code></p>
+
+<p>Then you can use <code>/place off</code> or just <code>/place</code> to turn off geolocation of any tweets after that. You can specify a street, city, placemark or business as a place:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong>/place Rio de Janeiro, Brazil &lt;029</strong>
+-- Your next tweet will be sent at -22.9112163,-43.2093781, which is near Rio de Janeiro, Brasil, South America (a city)
+TTYtter> <strong>/place NG8 1, United Kingdom  &lt;029</strong>
+-- Your next tweet will be sent at 52.950996099129,-1.19203191262383, which is near NG8 1, United Kingdom (a postcode)
+TTYtter> <strong>/place Bronx, New York &lt;022</strong>
+-- Your next tweet will be sent at 40.8501002,-73.8662464, which is near Bronx, New York, United States of America (a hamlet)
+TTYtter> <strong>/place Coors Field, Denver, Colorado &lt;036  </strong>
+-- Your next tweet will be sent at 39.7561146965203,-104.994083810925, which is near Coors Field, Blake Street, Denver, Denver County, Colorado, 80205, United States of America (a stadium)
+TTYtter> <strong>/place Statue of Liberty, Liberty Island &lt;040</strong>
+-- Your next tweet will be sent at 40.689245737137,-74.0445412130299, which is near Statue of Liberty, Hudson River Waterfront Walkway, Jersey City, Hudson County, New Jersey, 07302, United States of America (a attraction)
+TTYtter> <strong>/place Hospital Clinico San Carlos, Madrid, Spain &lt;049</strong>
+-- Your next tweet will be sent at 40.4407617610234,-3.71992637213825, which is near Hospital Clínico San Carlos, Calle Profesor Martín Lagos, Chamberí, Moncloa-Aravaca, Madrid, 28008, Spain (a hospital)
+TTYtter> <strong>/place Konig Frankfurter, Girona &lt;032 </strong>
+-- Your next tweet will be sent at 41.9854809,2.8221996, which is near Konig Frankfurter, Gran Via de Jaume I, Girona, Generalitat de Catalunya, Catalunya, 17002, Spain (a restaurant)
+TTYtter> <strong>/place off &lt;010</strong>
+-- Turning geolocation off</code></p>
+
+
+<p>This functionality uses the multigeo-wide geocoder (see below). The accuracy of your place queries will depend on the geocoder used.</p>
+
+<p>Thanks to TTYtter user <a href='http://twitter.com/xurxosanz'>@xurxosanz</a> for the idea for this functionality.</p>
+
+<h4>/teleport</h4>
+
+<p>Maybe you want to tweet from the same place another person is tweeting from. Maybe you are at the same place as another user, or even at a event with lots of people and geo-located tweets around. Or maybe you'd wish to be there.</p>
+
+<p>Just type <code>/teleport [tweet code]</code> to be there:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>d8+  Rua Miguel Couto, Centro, Rio de Janeiro, 20070-030, Brasil
+d8> [2011-10-14 16:58:02] &lt;<strong>+Nighto</strong>> <a href='http://t.co/4rqPEKEt'>http://t.co/4rqPEKEt</a> OH YEAH
+TTYtter> <strong>/teleport d8</strong> &lt;013
+-- Your next tweet will be sent at -22.903032,-43.17926.
+TTYtter> <strong>Beam me down to Brazil, Scotty! (testing another @ttytter geolocation extension)</strong> &lt;080
+-- using lat/long: (-22.903032, -43.17926)
+-- waiting 3 seconds to tweet, ^C cancels: "Beam me down to Brazil, Scotty! (testing another @ttytter geolocation extension)"
+-- sending to server
+e1+  Rua Miguel Couto, Centro, Rio de Janeiro, 20070-030, Brasil
+e1> <span style='color:brown'>[2011-10-14 19:48:34] &lt;<strong>+RealIvanSanchez</strong>> Beam me down to Brazil, Scotty! (testing another @ttytter geolocation extension)</span></code></p>
+
+<p>Please note you won't be able to teleport to tweets that have Place IDs instead of coordinates. TTYtter cannot (as of now) post tweets with a Place ID, and so multigeo.pl cannot clone that ID. That's what's happenning if you see a <code>sorry, no geoinformation in that tweet</code> error message.</p>
+
+<p>Thanks to TTYtter user <a href='http://twitter.com/vehrka'>@vehrka</a> for the idea for this functionality.</p>
+
+<h4>GPSD</h4>
+
+<p>GPSD is the way to go if you're tweeting from a machine which has a GPS plugged in to it. Be sure to get <a href='http://gpsd.berlios.de'>GPSD</a> working first.</p>
+
+<p>If everything's working, this functionality will automatically geolocate your tweets on the coordinates of your GPS receiver:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong>Trying out gpsd support for ttytter</strong> &lt;035
+-- No GPS fix, not using geolocation.
+-- waiting 3 seconds to tweet, ^C cancels: "Trying out gpsd support for ttytter"
+^C
+-- not sent, cancelled by user</code></p>
+
+<p>Awww, dammit. No GPS fix inside my flat. Seems I'll have to stick my hand out of the window one more time for this to work. Now, let's try again:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>
+TTYtter> <strong>Trying out ttytter+gpsd geolocation (again) </strong> &lt;043
+-- using lat/long: (40.7379316893733, -3.44560555824903)
+-- waiting 3 seconds to tweet, ^C cancels: "Trying out ttytter+gpsd geolocation (again)"
+-- sending to server</code></p>
+
+<p>By default, GPSD functionality is not active. You need to set the option <code>extpref_multigeo_gpsd=true</code> in your .ttytterrc file. Once TTYtter is running, you can issue the commands <code>/gpsd on</code> and <code>/gpsd off</code> to enable/disable GPSD functionality. Typing the <code>/gpsd</code> command alone will query the current GPS status (offline / no fix / fix and coordinates).</p>
+
+<p>Please note that <code>/place</code> and <code>/teleport</code> implies <code>/gpsd off</code>. Conversely, <code>/gpsd on</code> will override any previous <code>/place</code> or <code>/teleport</code> command.</p>
+
+<p>Be warned that GPS functionality has not been throughoutly tested. Please report bugs and patches.</p>
+
+<h4>GeoIP</h4>
+
+<p>GeoIP is the poorman's GPS. Based on your current IP and a IP-to-city database, it is able to set your general location. Don't expect accurate geolocation with this method. You might even end up in the wrong city if ISPs do a lazy job.</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong>Trying out #GeoIP extension for @ttytter</strong> &lt;040
+-- GeoIP extension will try to locate your public IP address now
+-- GeoIP: 83.50.223.514 is near Valencia, Comunidad Valenciana, Spain
+-- using lat/long: (39.4667, -0.3667)
+-- waiting 3 seconds to tweet, ^C cancels: "Trying out #GeoIP extension for @ttytter"
+-- sending to server
+c2+  Císcar - Comte d'Altea, Calle de Císcar, Eixample, Valencia, València/Valencia, Comunitat Valenciana, 46006, Spain
+c2> <span style='color:brown'>[2011-10-26  0:40:54] &lt;<strong>+RealIvanSanchez</strong>> Trying out #GeoIP extension for @ttytter</span></code></p>
+
+<p>GeoIP location will only happen once, just before your first tweet, and only if you've set <code>$extpref_multigeo_geoip=true</code> in your .ttytterrc file. If coordinates are already set (e.g. GPSD got a fix, or you've run <code>/place</code> before your first tweet), GeoIP location will not happen. It is quite fair to assume that if coordinates are already set, they're better than the ones GeoIP can provide.</p>
+
+<p>Be warned that GeoIP functionality is <b>not usable at this moment</b>. If you know how to fetch your public IP from Perl, or how to make STUN work, please do let me know. In the meantime, just use <code>/place [your city]</code></p>
+
+<h4>Shared geocoder</h4>
+
+<p>The <code>/place</code> and readable locations now share the geocoder. A geocoder is a external service that translates a placename into latitude-longitude coordinates and viceversa. Right now there are three geocoders available:</p>
+
+<p>The <b>OpenStreetMap Nominatim</b> geocoder queries que OpenStreetMap database, containing detailed information about most streets, and businesses if you're lucky. Please do check out <a href='http://www.openstreetmap.org'>www.openstreetmap.org</a> to check if places near you are in the database (add them if they're not in there! It's a wiki!), and check out <a href='http://wiki.openstreetmap.org/wiki/Nominatim'>wiki.openstreetmap.org/wiki/Nominatim</a> or else I will die in the hands of angry lawyers because you didn't read Nominatim's terms of use.</p>
+
+<p>The <b>GeoNames</b> geocoder queries the much simpler <a href='http://www.geonames.org'>www.geonames.org</a> database, which only contains data at city level (i.e. the most detailed information you can get from GeoNames is the name of a city).</p>
+
+<p>The <b>Twitter API</b> geocoder queries two API 1.1 endpoints (for <a href='https://dev.twitter.com/docs/api/1.1/get/geo/search'>direct</a> and <a href='https://dev.twitter.com/docs/api/1.1/get/geo/reverse_geocode'>reverse</a> geocoding). This geocoder allows you to fetch the very same placenames that other pure twitter clients show you. I'm guessing this is the "official" way to do geostuff according to the Twitter guys. But, be warned this geocoder can use up your API rate limit more quickly.</p>
+
+<p>Finally, the <b>null</b> geocoder does absolutely nothing. Use this if you don't care about seeing the location of other tweets, and if you won't use <code>/place</code>.</p>
+
+<p>By default, MultiGeo will use OpenStreetMap's Nominatim. In order to manually specify a geocoder, add one of those to your .ttytterrc file:
+<ul><li><code>extpref_multigeo_geocoder=nominatim</code></li>
+		<li><code>extpref_multigeo_geocoder=geonames</code></li>
+		<li><code>extpref_multigeo_geocoder=twitter</code></li>
+		<li><code>extpref_multigeo_geocoder=none</code></li>
+</ul></p>
+
+<p>And before anyone asks: there will not be a Google geocoder, due to Google's terms of use. Ideas about other geocoders will be appreciated.</p>
+
+<p>Note that, right now, TTYtter only has the ability to post tweets with coordinates, and not place IDs. A Place ID geocoder might be feasible, if there is interest from the TTYtter user community.</p>
+</blockquote>
+<hr>
+
+
+
+
+
+
+
+
+<a name='deshortify'><h3>Deshortify</h3></a>
+
+<p>Yes, yes, I know. You're fed up with all those t.co and ht.ly and fb.co and g.co URLs all over, and blindly clicking through them. If only TTYtter was able to show you the real URL behind that...</p>
+
+<p>Well, it can, silly. You just need to download and use <a href='deshortify.pl'>deshortify.pl</a>, and all of a sudden you'll see full link URLs. They will take more screen state to display, but are quite easy to read as they are underlined (if your terminal supports ANSI). Like this:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>v1&gt; [2012-03-13 23:53:35] &lt;RealIvanSanchez&gt; Dear @ttytter users: Behold! The new and improved de-shortifier: http://t.co/Xgqqu9Ra (now with underlining!)</code></p>
+
+<p><code style='display:block; white-space: pre-wrap;'>v1&gt; [2012-03-13 23:53:35] &lt;RealIvanSanchez&gt; Dear @ttytter users: Behold! The new and improved de-shortifier: <u>http://ivan.sanchezortega.es/ttytter/deshortify.pl</u> (now with underlining!)</code></p>
+
+<!-- <p>It will use up some more screen real state, but it's much, much easier to read URLs expanded and underlined.</p> -->
+
+
+
+<p>Deshortify also does some tricks to URLs to make them shorter: resolves feedburner and google news URLs, and cuts off some extraneous tracking stuff from the end of URLs (those "utm_source=twitter" bits that don't do anything useful to you and just take up space), and properly follows some &lt;iframe&gt;-based shorteners.</p>
+
+<p>Deshortify supports some configuration values in your .ttytterrc file:</p>
+
+<p>
+<dl>
+
+<dt><code>extpref_deshortifyproxy=http://proxy.localnetwork:8001/</code></dt><dd>Overrides system proxy settings. Deshortify tries to use the proxy defined in your environment variables but, if that fails for whatever reason, you can specify it in here.</dd>
+
+<dt><code>extpref_deshortifyretries=10</code></dt><dd>It is possible that resolving a shortener will timeout or fail for whatever reason. When this happens, deshortify will retry up to 3 times unless you modify this setting.</li>
+
+<dt><code>extpref_deshortifyalways=1</code></dt><dd>By default, deshortify only works on a list of known URL shorteners. This means "shorteners that <a href='http://twitter.com/RealIvanSanchez'>Iván</a> has seen in his timeline". Setting this will cause deshortify to <em>always</em> follow a link, regardless of if the URL seems to come from a shortener. Be warned: this means one more HTTP request per URL, which means more lagginess.</li>
+
+</dl>
+</p>
+
+
+<p><b>Update:</b> Starting with version 2.1.0, TTYtter supports resolution of t.co URLs. However, deshortify works with a bunch of other URL shorteners, such as fb.me, is.gd, ow.ly, adf.ly, kcy.me and 175 others. You will always see the final URL no matter how many URL shorteners are in the middle.</p>
+
+
+
+
+
+
+
+
+
+
+<hr>
+
+
+
+<a name='autounfollow'><h3>Auto-unfollow</h3></a>
+
+
+<p>So, the other day I read <!--<a href='https://twitter.com/metazool/status/185069828502065152'>-->this<!--</a>-->:</p>
+
+
+<p><code style='display:block; white-space: pre-wrap;'>zf5> [2012-03-28 20:24:20] &lt;<!--<a href='https://twitter.com/metazool/metazool'>-->metazool<!--</a>-->&gt; considering unfollowing anyone who utters the word 'license' over the next week and i mean anyone. Or is it 'licence'? Well, either, both</code></p>
+
+<p>And I said to myself: "This calls for a ttytter extension!". Behold, <a href='autounfollow.pl'>autounfollow.pl</a>!:</p>
+
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong>/follow nyancat &lt;015</strong>
+-- ok, you have started following user nyancat.
+TTYtter> <strong>/friends +1</span> &lt;011</strong>
+<span style='color:navy'>nyan cat</span> (nyancat) (f:4/203) (u:1)
+TTYtter> <strong>/killword !!! &lt;013</strong>
+-- Auto-unfollow armed and ready.
+-- Auto-unfollow killword active: !!!
+TTYtter> <strong>/a nyancat &lt;010</strong>
+-- Found tweet from nyancat with killword: !!!
+-- ok, you have stopped following user nyancat.
+<strong>za0</strong>> [2011-12-17 22:35:34] (x12) &lt;<strong>nyancat</strong>&gt; lets  nyan!!!
+TTYtter> <strong>/friends +1 &lt;011</strong>
+<span style='color:navy'>Big Ben</span> (big_ben_clock) (f:0/173677) (u:20302)
+ "Established November 2009. Entirely unofficial &amp; apparently imitated e..."</code></p>
+
+<p>What is going on in there? Well, I started following @nyancat, but then wanted to unfollow anyone who abuses exclamation signs. As it appears, @nyancat does, so the extension automatically unfollowed it when the tweet was loaded. And it's really unfollowed, because it doesn't appear among my list of followed users anymore.</p>
+
+<p>In case you want to stop the unfollowing massacre, just specify no killwords, like:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong> /killword &lt;009</strong>
+-- Auto-unfollow is now disarmed.</code></p>
+
+<p>Want more than one term? Eeeasy peasy:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>TTYtter> <strong> /killword "Please RT" viagra "buy rolex" &lt;040  </strong>
+-- Auto-unfollow armed and ready.
+-- Auto-unfollow killword active: Please RT
+-- Auto-unfollow killword active: viagra
+-- Auto-unfollow killword active: buy rolex</code></p>
+
+
+<p>This extension is a bit buggy still. Supposedly, it should save you from viewing the tweet that caused you to enter a mad rage and unfollow the user, but right now it doesn't. I'm returning 0 and not calling &amp;defaulthandle, but still... Well, this shouldn't be a problem, 'cause you won't see that user in your timeline ever again!</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+
+<a name='hipstter'><h3>Hipstter</h3></a>
+
+I release auto-unfollow and what happens 5 minutes later? This.
+
+<p><code style='display:block; white-space: pre-wrap;'><span style='color:red'>q5&gt; [2012-03-29 21:31:25] &lt;@xurxosanz&gt; @RealIvanSanchez auto-autounfollow based on trending topics #concepto #heytío //@metazool</span>
+<span style='color:brown'>s2&gt; [2012-03-29 21:35:38] &lt;RealIvanSanchez&gt; Thinking about #hipstter, a @ttytter extension to unfollow anyone tweeting about any trending topic, thanks to @xurxosanz</span>
+<span style='color:red'>s5&gt; [2012-03-29 21:37:42] &lt;@tjh&gt; @RealIvanSanchez Please, please do it. PLEASE.</span>
+<span style='color:red'>t3&gt; [2012-03-29 21:42:33] &lt;@pr4wn&gt; @xurxosanz @RealIvanSanchez @ttytter Best keep quiet about my #bieber fixation, then. #hipstter</span></code></p>
+
+<p>You asked for it, folks. Go get <a href='hipstter.pl'>hipstter.pl</a> before I fix the bugs and is outfashioned.</p>
+
+
+<p>Right now, hipstter mostly works, but is not able to process trends with non-ascii-7 characters.</p>
+
+
+
+
+
+
+
+<hr>
+
+<a name='libcaca'><h3>libcaca avatars</h3></a>
+
+<p>On a non-georelated note, consider using the <a href='http://caca.zoy.org/wiki/libcaca'>libcaca</a> utilities (<code>apt-get install caca-utils</code> on Debian-like systems) for displaying the avatar image (when doing <code>/whois username</code>), by adding this line to .ttytterrc:</p>
+
+<p><code style='display:block; white-space: pre-wrap;'>avatar=wget -q %U -O /tmp/avatar &amp;&amp; img2txt -f utf8 /tmp/avatar</code></p>
+
+</body>
+</html>
+

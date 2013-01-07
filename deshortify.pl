@@ -363,6 +363,13 @@ $unshort = sub{
 		$unshorting_regexp = qr/<iframe .*src=["'](.*?)["'].*>/;
 		$unshorting_thing_were_looking_for = "iframe";
 	}
+	elsif (($auth eq "bota.me")
+	      )
+	{
+		$unshorting_method = "REGEXP";	# For these servers, look for the first defined javascript snippet with "window.location=foo"
+		$unshorting_regexp = qr/window.location\s*=\s*["'](.*?)["']\s*;/;
+		$unshorting_thing_were_looking_for = "window.location";
+	}
 
 
 	if (not $unshorting_method eq none)

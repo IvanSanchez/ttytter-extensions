@@ -125,7 +125,7 @@ $unshort_retry = sub{
 	}
 	else
 	{
-		print $stdout, "-- Deshortify failed for $url due to $reason, retrying ($retries_left retries left)\n" if ($verbose);
+		print $stdout "-- Deshortify failed for $url due to $reason, retrying ($retries_left retries left)\n" if ($verbose);
 		return &$unshort($url, $retries_left-1);
 	}
 	return 0;
@@ -273,6 +273,7 @@ $unshort = sub{
 	    ($auth eq "tcrn.ch")	or	# Techcrunch
 	    ($auth eq "tiny.cc")	or
 	    ($auth eq "trib.al")	or	($auth =~ m/\.trib\.al$/ )	or	# whatever.trib.al is done by SocialFlow
+	    ($auth eq "untp.it")	or	# Untap, via Bitly
 	    ($auth eq "vrge.co")	or	# The Verge
 	    ($auth eq "yhoo.it")	or	# Yahoo
 	    ($auth eq "xfru.it")	or
@@ -305,8 +306,9 @@ $unshort = sub{
 	    ($auth eq "short.ie")	or
 	    ($auth eq "short.to")	or
 	    ($auth eq "slate.me")	or	# The Slate
+	    ($auth eq "s.shr.lc")	or	# Shareaholic, bitly-powered
 	    ($auth eq "s.vfs.ro")	or
-	    ($auth eq "tmblr.co")	or
+	    ($auth eq "tmblr.co")	or	# Tumblr
 	    ($auth eq "twurl.nl")	or
 	    ($auth eq "ymlp.com")	or
 #	    ($auth eq "youtu.be")	or	# This one is actually useful: no information is gained by de-shortening.
@@ -316,9 +318,10 @@ $unshort = sub{
 	    ($auth eq "keruff.it")	or
 	    ($auth eq "drudge.tw")	or
 	    ($auth eq "m.safe.mn")	or
+	    ($auth eq "pocket.co")	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "onforb.es")	or	# Forbes
-	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "on.rt.com")	or	# RT
+	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "feedly.com")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
@@ -352,7 +355,9 @@ $unshort = sub{
 		$unshorting_regexp = qr/<input.* name=["']url["'] .*value=["'](.*?)["'].*/;
 		$unshorting_thing_were_looking_for = "<input name='url'> field";
 	}
-	elsif ($auth eq "www.snsanalytics.com")
+	elsif (($auth =~ m#\.visibli\.com$# and $path =~ m#^/share# ) or	# http://whatever.visibli.com/share
+	       ($auth =~ m#\.visibli\.com$# and $path =~ m#^/links# )	# http://whatever.visibli.com/links
+	      )
 	{
 		$unshorting_method = "REGEXP";	# For these servers, look for the first defined iframe
 		$unshorting_regexp = qr/<iframe .*src=["'](.*?)["'].*>/;
@@ -452,7 +457,7 @@ $unshort = sub{
 				my $newurl = $1;
 
 # 				print "Got \"$1\" URL inside an <iframe src=...>";
-				print $stdout, "-- Deshortify found an $unshorting_thing_were_looking_for for $url, and it points to $newurl\n" if ($verbose);
+				print $stdout "-- Deshortify found an $unshorting_thing_were_looking_for for $url, and it points to $newurl\n" if ($verbose);
 
 				# If my iframe URL starts with a "/", treat it as a relative URL.
 				if ($newurl =~ m#^/# )
@@ -465,7 +470,7 @@ $unshort = sub{
 			}
 
 			# If no iframes match the regexp above, panic. But just a bit.
-			print $stdout, "-- Deshortify expected an $unshorting_thing_were_looking_for, but none found\n" if ($verbose);
+			print $stdout "-- Deshortify expected an $unshorting_thing_were_looking_for, but none found\n" if ($verbose);
 			return $url;
 		}
 	}

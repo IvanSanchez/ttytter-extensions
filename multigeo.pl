@@ -1,18 +1,17 @@
-
 #  ----------------------------------------------------------------------------
 #  "THE BEER-WARE LICENSE":
 #  <ivan@sanchezortega.es> wrote this file. As long as you retain this notice you
 #  can do whatever you want with this stuff. If we meet some day, and you think
 #  this stuff is worth it, you can buy me a beer in return.
 #  ----------------------------------------------------------------------------
-# 
-# 
+#
+#
 # Multi-geo extension for TTYtter.
-# 
+#
 # This extension builds upon the gpsd, geoip, place, teleport, where and where-inline extensions, trying to unifying all of them to provide an improved geolocation experience on TTYtter.
-# 
+#
 # Read http://ivan.sanchezortega.es/ttytter for details on the commands provided.
-# 
+#
 #
 #
 #
@@ -55,13 +54,13 @@ my $gpsd_active = false;
 if ($extpref_multigeo_gpsd)
 {
 	print "-- MultiGeo will use GPSD to locate your tweets\n";
-	
+
 	require Net::GPSD3;
 	$host=shift || undef;
 	$port=shift || undef;
 
 	$gpsd=Net::GPSD3->new(host=>$host, port=>$port); #default host port as undef
-	
+
 	$gpsd_active = true;
 }
 else
@@ -74,7 +73,7 @@ if ($extpref_multigeo_geoip)
 {
 	print "-- MultiGeo will use GeoIP to locate your tweets\n";
 	print "-- This will use STUN (Simple Traversal of UDP through NATs) to determine your public IP address.\n";
-	
+
 	require Geo::IP;
 	require STUN::Client;
 }
@@ -99,17 +98,17 @@ if (not $extpref_multigeo_geocoder)
 if ($extpref_multigeo_geocoder eq "geonames")
 {
 	print "-- Will use GeoNames for geocoding. Have a look at http://www.geonames.org .\n";
-	
+
 	$reversegeocoder = sub
 	{
 		my $latitude = shift;
 		my $longitude = shift;
-		
+
 		my $r = &grabjson("http://api.geonames.org/findNearbyPlaceNameJSON?formatted=true".
 		"&lat=" . $latitude .
 		"&lng=" . $longitude .
 		"&username=ttytter&style=medium",0,1);
-		
+
 		if ($r->{'geonames'}->[0])
 		{
 			my $location = $r->{'geonames'}->[0]->{'name'} . ", " . $r->{'geonames'}->[0]->{'adminName1'} . ", " . $r->{'geonames'}->[0]->{'countryName'} ;
@@ -118,21 +117,21 @@ if ($extpref_multigeo_geocoder eq "geonames")
 		else
 		{
 			our $exception;
-			&$exception(2,"*** Reverse geocoder didn't find any results for given coordinates ($latitude,$longitude). Daily capacity (30000 requests for all ttytter users) might have been reached. Check if geonames.org returns any result.\n");
+			&$exception(30,"*** Reverse geocoder didn't find any results for given coordinates ($latitude,$longitude). Daily capacity (30000 requests for all ttytter users) might have been reached. Check if geonames.org returns any result.\n");
 			return;
 		}
 	};
-	
+
 	$geocoder = sub
 	{
 		my $placename = shift;
 		my $latitude  ;
 		my $longitude ;
-		
+
 		my $r = &grabjson("http://api.geonames.org/searchJSON?maxRows=1&formatted=true".
 		"&q=" . URLEncode($placename) .
 		"&username=ttytter&style=medium",0,1);
-		
+
 		if ($r->{'geonames'}->[0])
 		{
 			$latitude  = $r->{'geonames'}->[0]->{'lat'} ;
@@ -145,33 +144,40 @@ if ($extpref_multigeo_geocoder eq "geonames")
 			&$exception(2,"*** Geocoder didn't find any results for given placename ($placename). Daily capacity (30000 requests for all ttytter users) might have been reached. Check if geonames.org returns any result.\n");
 
 		}
-		
+
 # 		my %result = ("latitude", $latitude, "longitude", $longitude, "placename", $placename);
 		return [$latitude, $longitude, $placename];
 	};
-	
-	
+
+
 
 }
 elsif  ($extpref_multigeo_geocoder eq "nominatim")
 {
 	print "-- Will use the OpenStreetMap geocoding service, Nominatim. Geolocation data is CC-by-sa OpenStreetMap contributors. Have a look at http://wiki.openstreetmap.org/wiki/Nominatim\n";
-	
+
 	$reversegeocoder = sub
 	{
 		my $latitude = shift;
 		my $longitude = shift;
-		
+
 		my $r = &grabjson("http://nominatim.openstreetmap.org/reverse".
 		"?lat=" . $latitude .
 		"&lon=" . $longitude .
 		"&format=json&user-agent=ttytter",0,1);
-	
-		my $location = $r->{'display_name'};
-		
-		return $location;
+
+		if ($r->{'display_name'})
+		{
+			my $location = $r->{'display_name'};
+			return $location;
+		}
+		else
+		{
+			&$exception(30,"*** No results found for the given coordinates, check their validity. Or visit www.osm.org to see if there is anything at all over there.\n");
+			return;
+		}
 	};
-	
+
 	$geocoder = sub
 	{
 		my $placename = shift;
@@ -179,15 +185,15 @@ elsif  ($extpref_multigeo_geocoder eq "nominatim")
 		my $longitude ;
 
 		my $r = &grabjson("http://nominatim.openstreetmap.org/search".
-		"?q=" . URLEncode($placename) . 
+		"?q=" . URLEncode($placename) .
 		"&format=json&limit=1&user-agent=ttytter",0,1);
 
 # 			print Dumper("http://nominatim.openstreetmap.org/search".
-# 				"?q=" . URLEncode($command) . 
+# 				"?q=" . URLEncode($command) .
 # 				"&format=json&limit=1&user-agent=ttytter",0,1);;
 # 			print Dumper($r);
 # 			print Dumper($r->[0]);
-		
+
 		if ($r->[0])
 		{
 			$placename = $r->[0]->{'display_name'} . " (a " . $r->[0]->{'type'} . ")";
@@ -197,43 +203,43 @@ elsif  ($extpref_multigeo_geocoder eq "nominatim")
 		else
 		{
 			our $exception;
-			&$exception(2,"*** No results found for that place. Check your spelling. Or visit www.osm.org to see if the place is listed under other spelling.\n");
+			&$exception(30,"*** No results found for that place. Check your spelling. Or visit www.osm.org to see if the place is listed under other spelling.\n");
 
 		}
-		
+
 # 		my %result = ("latitude", $latitude, "longitude", $longitude, "placename", $placename);
 		return [$latitude, $longitude, $placename];
 	};
-	
+
 }
 elsif  ($extpref_multigeo_geocoder eq "twitter")
 {
 	print "-- Will use the Twitter geocoding service via its API v1.1\n";
-	
+
 	$reversegeocoder = sub
 	{
 		my $latitude = shift;
 		my $longitude = shift;
-		
+
 		my $r = &grabjson("https://api.twitter.com/1.1/geo/reverse_geocode.json".
 		"?lat=" . $latitude .
 		"&long=" . $longitude .
 		"&granularity=poi&max_results=1&user-agent=ttytter",0,0);
 
 # 		print Dumper($r);
-		
+
 		my $location = $r->{'result'}->{'places'}->[0]->{'name'};
-		
+
 		if ($r->{'result'}->{'places'}->[0]->{'contained_within'})
 		{
 			$location = $location . ", " .
 			            $r->{'result'}->{'places'}->[0]->{'contained_within'}->[0]->{'name'} . ", " .
 			            $r->{'result'}->{'places'}->[0]->{'contained_within'}->[0]->{'country'};
 		}
-		
+
 		return $location;
 	};
-	
+
 	$geocoder = sub
 	{
 		my $placename = shift;
@@ -241,11 +247,11 @@ elsif  ($extpref_multigeo_geocoder eq "twitter")
 		my $longitude ;
 
 		my $r = &grabjson("https://api.twitter.com/1.1/geo/search.json".
-		"?query=" . URLEncode($placename) . 
+		"?query=" . URLEncode($placename) .
 		"&granularity=poi&max_results=1&user-agent=ttytter",0,0);
 
 # 			print Dumper($r);
-		
+
 		if ($r->{'result'}->{'places'}->[0])
 		{
 			$placename = $r->{'result'}->{'places'}->[0]->{'name'} . " (a " . $r->{'result'}->{'places'}->[0]->{'place_type'} . ")";
@@ -257,51 +263,51 @@ elsif  ($extpref_multigeo_geocoder eq "twitter")
 		else
 		{
 			our $exception;
-			&$exception(2,"*** No results found for that place..\n");
+			&$exception(30,"*** No results found for that place..\n");
 
 		}
-		
+
 # 		my %result = ("latitude", $latitude, "longitude", $longitude, "placename", $placename);
 		return [$latitude, $longitude, $placename];
 	};
-	
+
 }
 elsif ($extpref_multigeo_geocoder eq "none")
 {
 	print "-- Will not use any geocoder at all.\n";
-	
+
 	$reversegeocoder = sub
 	{
 		my $latitude = shift;
 		my $longitude = shift;
-		
+
 		return ;
 	};
-	
+
 	$geocoder = sub
 	{
 		my $placename = shift;
-		
+
 		return ;
 	};
 }
 else
 {
 	our $exception;
-	&$exception(2,"*** Invalid geocoder specified for multigeo.pl. Please check your configuration.\n");	
-	
+	&$exception(2,"*** Invalid geocoder specified for multigeo.pl. Please check your configuration.\n");
+
 	$reversegeocoder = sub
 	{
 		my $latitude = shift;
 		my $longitude = shift;
-		
+
 		return ;
 	};
-	
+
 	$geocoder = sub
 	{
 		my $placename = shift;
-		
+
 		return ;
 	};
 }
@@ -329,7 +335,7 @@ sub URLEncode {
 
 $prepost = sub {
 	our ($lat,$long,$superverbose);
-	
+
 	# Let's try GPSD first
 	if ($extpref_multigeo_gpsd and $gpsd_active)
 	{
@@ -353,19 +359,19 @@ $prepost = sub {
 		    $long = $poll->tpv->lon ;
 		    print "-- GPSD returned coordinates $lat,$lon\n" if ($verbose);
 		  }
-		
+
 	}
-	
+
 	# Now that GPSD has had a chance to get a fix, run through GeoIP in case GPSD didn't work.
-	# The order of extension loading should not affect the result of using GPSD over GeoIP, 
-	
+	# The order of extension loading should not affect the result of using GPSD over GeoIP,
+
 	# GeoIP is disabled for the time being, due to whatismyip.org being down. If anyone knows about a good method to fetch the computer's current IP address, please let me know. And don't say "STUN", because the CPAN packages don't work.
 # 	if ($extpref_multigeo_geoip)
 # 	{
 # 		if(!$Lib_firstrun){	# Make sure we only tun GeoIP logic just once.
 # 			$Lib_firstrun = true;
-# 			
-# 			
+#
+#
 # 			if ($lat || $long )	# Alas, this will not work on Null Island
 # 			{
 # 				print "-- Coordinates already set, GeoIP will not run\n";
@@ -374,11 +380,11 @@ $prepost = sub {
 # 			{
 # 				print "-- GeoIP extension will try to locate your public IP address now\n";
 # 				$ip_addr = &backticks($baseagent, '/dev/null', undef, 'http://whatismyip.org', undef, 0, undef);
-# 
+#
 # 				# FIXME: How do we make this work on win32 systems?
 # 				my $gi = Geo::IP->open("/usr/share/GeoIP/GeoIPCity.dat", GEOIP_STANDARD);
 # 				my $record = $gi->record_by_addr($ip_addr);
-# 				
+#
 # 				if (!$record ||
 # 				    !$record->latitude  ||
 # 				    !$record->longitude )
@@ -392,13 +398,13 @@ $prepost = sub {
 # 					my $country = $record->country_name;
 # 					   $lat     = $record->latitude;
 # 					   $long    = $record->longitude;
-# 					
+#
 # 					print "-- GeoIP: $ip_addr is near $city, $region, $country\n";
 # 				}
 # 			}
 # 		}
 # 	}
-	
+
 	my $tweet = shift;
 	return $tweet;
 };
@@ -422,39 +428,39 @@ $addaction = sub {
 	my $command = shift;
 	our ($lat,$long);
 
-	
+
 	# /place
 	if ($command =~ s#^/place ## && length($command)) {
-		
+
 		if ($extpref_multigeo_gpsd and $gpsd_active)
 		{
-			print(2,"-- Automatically turning off GPSD support. Turn on again with \"/gpsd on\".\n");
+			print $stdout ("-- Automatically turning off GPSD support. Turn on again with \"/gpsd on\".\n");
 			$gpsd_active = false;
 		}
-		
+
 		if ($command eq "off") {
-			print ("-- Turning geolocation off\n");
+			print $stdout ("-- Turning geolocation off\n");
 			undef($lat);
 			undef($long);
 			return 1;
 		} else {
 			&$utf8_encode($command);
-			
+
 			$data = &$geocoder($command);	# Returns [lat, lon, placename]
-			
+
 			if ($data->[0] ne undef and $data->[1] ne undef)
 			{
 # 				&$utf8_decode($location);
 				my $placename = &descape($data->[2]);
-				
+
 				$lat  = $data->[0];
 				$long = $data->[1];
-				
-				print ("-- Your next tweets will be sent at " . $lat . "," . $long . ", which is near " . $placename . "\n" );
+
+				print $stdout ("-- Your next tweets will be sent at " . $lat . "," . $long . ", which is near " . $placename . "\n" );
 			}
 			else
 			{
-				print ("*** Geocoder failed, will not geolocate your next tweets.\n")
+				&$exception (30,"*** Geocoder failed, will not geolocate your next tweets.\n")
 			}
 			return 1;
 		}
@@ -463,23 +469,23 @@ $addaction = sub {
 	{
 		if ($command =~ m/^place$/)	# Empty /place command, just turn geolocation off.
 		{
-			print ("-- Turning geolocation off\n");
+			print $stdout ("-- Turning geolocation off\n");
 			undef($lat);
 			undef($long);
 			return 1;
 		}
 	}
-	
-	
+
+
 	# /teleport
 	if ($command =~ s#^/teleport ## && length($command)) {
 		if ($extpref_multigeo_gpsd and $gpsd_active)
 		{
-			print(2,"-- Automatically turning off GPSD support. Turn on again with \"/gpsd on\".\n");
+			print $stdout ("-- Automatically turning off GPSD support. Turn on again with \"/gpsd on\".\n");
 			$gpsd_active = false;
 		}
-		
-		
+
+
 		my $tweet = &get_tweet($command);
 		if (!$tweet->{'id_str'}) {
 			print $stdout "-- sorry, no such tweet (yet?).\n";
@@ -490,40 +496,40 @@ $addaction = sub {
 			print $stdout "-- sorry, no geoinformation in that tweet.\n";
 			return 1;
 		}
-		
+
 		$lat  = $tweet->{'geo'}->{'coordinates'}->[0];
 		$long = $tweet->{'geo'}->{'coordinates'}->[1];
-		
-		print ("-- Your next tweets will be sent at " . $lat . "," . $long . ".\n" );
-		
+
+		print $stdout ("-- Your next tweets will be sent at " . $lat . "," . $long . ".\n" );
+
 		return 1;
 	}
-	
-	
+
+
 	# /gpsd
 	if ($command =~ s#^/gpsd ## && length($command)) {
 		if (not $extpref_multigeo_gpsd)
 		{
 			our $exception;
-			&$exception(2,"*** Use either \"/gpsd on\" or \"/gpsd off\" to enable/disable GPSD, or just \"/gpsd\" to query.\n");		
+			&$exception(31,"*** GPSD functionality disabled.\n");
 			return 1;
 		}
 		if ($command eq "on")
 		{
-			print(2,"-- GPSD support is now enabled.\n");
+			print $stdout ("-- GPSD support is now enabled.\n");
 			$gpsd_active = true;
 		}
 		elsif ($command eq "off")
 		{
-			print(2,"-- GPSD support is now disabled.\n");
+			print $stdout ("-- GPSD support is now disabled.\n");
 			$gpsd_active = false;
 		}
 		else
 		{
 			our $exception;
-			&$exception(2,"*** Use either \"/gpsd on\" or \"/gpsd off\" to enable/disable GPSD, or just \"/gpsd\" to query.\n");	
+			&$exception(31,"*** Use either \"/gpsd on\" or \"/gpsd off\" to enable/disable GPSD, or just \"/gpsd\" to query.\n");
 		}
-		
+
 		return 1;
 	}
 	elsif ($command =~ m/^gpsd$/)	# Empty /place command, just turn geolocation off.
@@ -531,7 +537,7 @@ $addaction = sub {
 		if (not $extpref_multigeo_gpsd)
 		{
 			our $exception;
-			&$exception(2,"*** Use either \"/gpsd on\" or \"/gpsd off\" to enable/disable GPSD, or just \"/gpsd\" to query.\n");		
+			&$exception(31,"*** GPSD functionality disabled.\n");
 			return 1;
 		}
 		# ...fetch lat and long from GPSD ...
@@ -539,17 +545,17 @@ $addaction = sub {
 		print Dumper($poll) if $debug;
 
 		if ($poll->active == 0) {
-			print "-- GPS offline.\n";
+			print $stdout "-- GPS offline.\n";
 		} elsif ($poll->tpv->mode == 0) {
-			print "-- No GPS fix.\n";
+			print $stdout "-- No GPS fix.\n";
 		} else {
 			my $lat =  $poll->tpv->lat ;
 			my $long = $poll->tpv->lon ;
-			print "-- GPSD returned coordinates $lat,$lon\n";
+			print $stdout "-- GPSD returned coordinates $lat,$lon\n";
 		}
 		return 1;
 	}
-	
+
 	# No matches, run through any other command hooks.
 	return 0;
 };
@@ -569,21 +575,21 @@ $addaction = sub {
 $handle = sub {
 	my $tweet = shift;
 	our $verbose;
-	
-	
+
+
 	&defaulthandle($tweet);
 
-	
+
 	if ($tweet->{'user'}->{'geo_enabled'} eq 'true' && $tweet->{'geo'}->{'coordinates'}->[0] ne 'undef')
 	{
 # 		If tweet has coordinates, call the (selected) geocoder.
 
 # 		print $stdout "-- Tweet has lat,lon coordinates, geocoding" if ($verbose);
 
-		
+
 		my $tw_lat = $tweet->{'geo'}->{'coordinates'}->[0];
 		my $tw_lon = $tweet->{'geo'}->{'coordinates'}->[1];
-		
+
 		if ($geocoder_cache{$tw_lat.",".$tw_lon})
 		{
 			$placename = $geocoder_cache{$tw_lat.",".$tw_lon};
@@ -593,37 +599,37 @@ $handle = sub {
 		else
 		{
 			print $stdout "-- Querying geocoder: " . $tw_lat . "," . $tw_lon . "\n" if ($verbose);
-			
+
 			$placename = &$reversegeocoder( $tw_lat , $tw_lon );
-			
+
 			$placename = &descape($placename);	# This has changed with ttytter 2.0.02 - before, utf8_decode was used.
 
-					
+
 			$geocoder_cache{$tw_lat.",".$tw_lon} = $placename;
 			$store->{cache_misses} += 1;
-			
+
 		}
 	}
 	elsif ($tweet->{'user'}->{'geo_enabled'} eq 'true' && $tweet->{'place'}->{'id'} ne '' )
 	{
 # 		If tweet has Place ID, chances are we already loaded the placename from the twitter API when the tweet was pulled off the stream, so no extra processing is needed.
 		print $stdout "-- Tweet has place ID and name.\n" if ($verbose);
-		
+
 		$placename = $tweet->{'place'}->{'full_name'} . ", " . $tweet->{'place'}->{'country_code'} . " (" . $tweet->{'place'}->{'place_type'} . ")";
 	}
 	else
 	{
 # 		No coordinates and no place ID? Then do nothing.
-		
+
 		print $stdout "-- Tweet not geoenabled.\n" if ($verbose);
 		return 1;
 	}
-	
-	
-	
+
+
+
 	# Basically copied from ttytter.pl's defaulthandle
 	my $menu_select = $tweet->{'menu_select'};
-	
+
 	$menu_select = (length($menu_select) && !$script)
 		? (($menu_select =~ /^z/) ?
 			"${EM}${menu_select}+${OFF} " :
@@ -631,7 +637,7 @@ $handle = sub {
 		: '';
 
 	print $streamout ($menu_select . " " . $placename . "\n" );
-	
+
 	return 1;
 };
 
@@ -647,7 +653,7 @@ $handle = sub {
 # $shutdown  = sub {
 # 	our $verbose;
 # 	our $is_background;
-# 
+#
 # 	if ($is_background)
 # 	{
 # 		our $store;
@@ -665,13 +671,13 @@ $handle = sub {
 # 		$context = "foreground";
 # 		print "-- Fetched geocoder cache stats from background process\n" if $verbose;
 # 	}
-# 
+#
 # # 	$store->{deshortify_cache_misses} += ($store->{deshortify_cache_limit} * $store->{deshortify_cache_flushes});
-# # 	print $stdout "-- Deshortify cache stats (misses/hits/flushes): $store->{deshortify_cache_misses}/$store->{deshortify_cache_hit_count}/$store->{deshortify_cache_flushes}\n" if $verbose;  
+# # 	print $stdout "-- Deshortify cache stats (misses/hits/flushes): $store->{deshortify_cache_misses}/$store->{deshortify_cache_hit_count}/$store->{deshortify_cache_flushes}\n" if $verbose;
 # # 	sendbackgroundkey('deshortify_cache_misses', getbackgroundkey('deshortify_cache_misses') + (getbackgroundkey('deshortify_cache_limit') * getbackgroundkey('deshortify_cache_flushes'))  );
-# 
+#
 # 	print $stdout "-- Geocoder cache stats (misses/hits/flushes/context): $cache_hits/$cache_miss/$cache_flush/$context\n" if ($verbose);
-# 
+#
 # 	return 0;
 # }
 

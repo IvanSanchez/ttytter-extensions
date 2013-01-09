@@ -121,7 +121,7 @@ $unshort_retry = sub{
 
 	if ($retries_left eq 0)
 	{
-		&$exception(2,"*** Could not deshortify $url further due to $reason\n");
+		&$exception(32,"*** Could not deshortify $url further due to $reason\n");
 		return $url;
 	}
 	else
@@ -221,6 +221,7 @@ $unshort = sub{
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
 	    ($auth eq "rww.to")	or
+	    ($auth eq "r88.it")	or
 	    ($auth eq "sbn.to")	or
 	    ($auth eq "sco.lt")	or
 	    ($auth eq "s.coop")	or	# Cooperative shortening
@@ -239,6 +240,7 @@ $unshort = sub{
 	    ($auth eq "ur1.ca")	or
 	    ($auth eq "vsb.li")	or
 	    ($auth eq "vsb.ly")	or
+	    ($auth eq "wh.gov")	or	# Whitehouse.gov
 	    ($auth eq "6sen.se")	or
 	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "amba.to")	or	# Ameba.jp
@@ -252,6 +254,7 @@ $unshort = sub{
 	    ($auth eq "engt.co")	or	# Engadget
 # 	    ($auth eq "flic.kr")	or	# Hhhmm, dunno is there's much use in de-shortening to flickr.com anyway.
 	    ($auth eq "flip.it")	or	# Flipboard
+	    ($auth eq "gen.cat")	or	# Generalitat Catalana (catalonian gov't)
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
 	    ($auth eq "imrn.me")	or
@@ -441,40 +444,39 @@ $unshort = sub{
 
 		$ua->cookie_jar({});
 
-
+		my $response;
 		if ($unshorting_method eq "HEAD")
 		{
 			# Visit the link with a HEAD request, see if there's a redirect header. If redirected -> that's the URL we want.
 
 			my $request  = HTTP::Request->new( HEAD => "$url" );
-			my $response = $ua->request($request);
-
-	# 		if ( $response->previous ) {
-	# 		if ( $response->is_success and $response->previous ) {
-
-			if ($response->header( "Location" ))
-			{
-	# 			$url = $response->request->uri;
-				$url = $response->header( "Location" );
-				print "-- Deshortened: $original_url -> $url\n" if ($verbose);
-
-				# Add to cache
-				$deshortify_cache{$original_url} = $url;
-
-				# Let's run the URL again - maybe this is another short link!
-				return &$unshort($url, $extpref_deshortifyretries);
-			}
-			elsif (not $response->is_success)	# Not a HTTP 20X code
-				{ &$unshort_retry($url, $retries_left, $response->status_line); }
-
+			$response = $ua->request($request);
 		}
+# 		elsif ($unshorting_method eq "REGEXP")
+		else
+		{
+			$response = $ua->get($url);
+		}
+
+		# For either HEAD or REGEXP methods, check if we've got a 302 result with a Location: header.
+		if ($response->header( "Location" ))
+		{
+# 			$url = $response->request->uri;
+			$url = $response->header( "Location" );
+			print "-- Deshortened: $original_url -> $url\n" if ($verbose);
+
+			# Add to cache
+			$deshortify_cache{$original_url} = $url;
+
+			# Let's run the URL again - maybe this is another short link!
+			return &$unshort($url, $extpref_deshortifyretries);
+		}
+		elsif (not $response->is_success)	# Not a HTTP 20X code
+			{ &$unshort_retry($url, $retries_left, $response->status_line); }
+
+		# Once we've checked for Location: headers, check for the contents if we're using the REGEXP method )only if the document retrieval has been successful)
 		elsif ($unshorting_method eq "REGEXP")
 		{
-			my $response = $ua->get($url);
-
-			# FIXME: Check for HTTP 302 response.
-			if (not $response->is_success)
-				{ &$unshort_retry($url, $retries_left, $response->status_line); }
 
 # 			print $stdout $response->decoded_content if ($verbose);
 

@@ -36,7 +36,8 @@
 # TODO: Allow a screen width to be specified, and then don't de-shortify links if the width of the tweet would exceed that. Or get the screen width from the environment somehow.
 # TODO: Add a carriage return (but no line feed) ANSI control char, after the links have been deshortified. If you're writing something while URLs are being resolved, the display will be messed up. Hopefully a CR will help hide the problem. Update: ANSI control chars to move the cursor or clear the current line will fail miserably; all I managed is to add a blank line between tweets. It seems that it has something to do with ReadLine::TTYtter.
 # TODO: Fix TTYtter so that search and tracked keywords are shown with the "Bold on" and "bold off" ANSI sequences instead of "bold on" and "reset". Right now URL underlining will be messed up if the full URL contains the keyword. Hopefully this can be done in 2.1.0 or 2.2.0.
-# TODO: Document $extpref_deshortifyretries and related functionality
+# TODO: Prevent shortener infinite loops via a mechanism similar to deshortify_retries, max depth being configurable via parameters
+# TODO: Prevent shortener infinite loops via detection of loops in the cache.
 
 
 
@@ -222,6 +223,7 @@ $unshort = sub{
 	    ($auth eq "rww.to")	or
 	    ($auth eq "sbn.to")	or
 	    ($auth eq "sco.lt")	or
+	    ($auth eq "s.coop")	or	# Cooperative shortening
 	    ($auth eq "see.sc")	or
 	    ($auth eq "smf.is")	or	# Summify
 	    ($auth eq "sns.mx")	or	# SNS analytics
@@ -280,6 +282,7 @@ $unshort = sub{
 	    ($auth eq "xfru.it")	or
 	    ($auth eq "wapo.st")	or	# Washington Post
 	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
+	    ($auth eq "xurl.es")	or
 	    ($auth eq "zite.to")	or
 	    ($auth eq "a.eoi.co")	or	# Escuela de Organización Industrial
 	    ($auth eq "amzn.com")	or	# Amazon.com
@@ -339,7 +342,7 @@ $unshort = sub{
 	    ($auth eq "feeds.feedburner.com")	or
 	    ($auth eq "feedproxy.google.com")	or
 	    ($auth eq "www.pheedcontent.com")	or	# Oh, look, Imma l337 h4xx0r. Geez.
-#	    ($auth =~ m/^news\.google\.[a-z]{2,3}$/)	or	# Hah! You thought you were going to pollute my links, did you, google news?
+	    ($auth =~ m/^news\.google\.[a-z]{2,3}$/)	or	# Hah! You thought you were going to pollute my links, did you, google news?
 	    ($auth eq "www.linkedin.com" and $path eq "/slink")	or	# A tricky one. lnkd.in redirects to www.linkedin.com/slink?foo, which redirects again.
 	    ($auth =~ m/^feeds\./)	or	# OK, I've had enough of you, feeds.whatever.whatever!
 	    ($auth =~ m/feedsportal\.com$/)	or	# Gaaaaaaaaaaaaaaaah!
@@ -374,12 +377,20 @@ $unshort = sub{
 		$unshorting_regexp = qr/window.location\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_thing_were_looking_for = "window.location";
 	}
-	elsif (($auth =~ m/^news\.google\.[a-z]{2,3}$/)	# Actually, Google News changed strategy and no longer issues HTTP 302s.
+# 	elsif (($auth =~ m/^news\.google\.[a-z]{2,3}$/)	# For a while, Google News stopped issuing HTTP 302s.
+# 	      )
+# 	{
+# 		$unshorting_method = "REGEXP";	# For these servers, look for the first <meta http-equiv=refresh content='0;URL=http://foobar'> tag
+# 		$unshorting_regexp = qr/<meta\s*http-equiv=['"]refresh['"]\s*content=["']\d;URL=['"](.*?)["']\s*['"]\s*>;/i ;
+# 		$unshorting_thing_were_looking_for = "meta refresh";
+# 	}
+	elsif (($auth eq "www.scoop.it" )
 	      )
 	{
-		$unshorting_method = "REGEXP";	# For these servers, look for the first <meta http-equiv=refresh content='0;URL=http://foobar'> tag
-		$unshorting_regexp = qr/<meta\s*http-equiv=['"]refresh['"]\s*content=["']\d;URL=['"](.*?)["']\s*['"]\s*>;/i ;
-		$unshorting_thing_were_looking_for = "meta refresh";
+		$unshorting_method = "REGEXP";	# For these servers, look for the first <h2 class="postTitleView"><a href=...></a> tag
+		$unshorting_regexp = qr#<h2 class="postTitleView"><a href="(.*?)"# ;
+# 		<h2 class="postTitleView"><a href="https://www.youtube.com/watch?v=LKtbZvWDhKk" onclick="trackPostClick(3994760072); r
+		$unshorting_thing_were_looking_for = "scoop.it article";
 	}
 
 
@@ -459,9 +470,9 @@ $unshort = sub{
 		}
 		elsif ($unshorting_method eq "REGEXP")
 		{
-
 			my $response = $ua->get($url);
 
+			# FIXME: Check for HTTP 302 response.
 			if (not $response->is_success)
 				{ &$unshort_retry($url, $retries_left, $response->status_line); }
 
@@ -474,7 +485,6 @@ $unshort = sub{
 			{
 				my $newurl = $1;
 
-# 				print "Got \"$1\" URL inside an <iframe src=...>";
 				print $stdout "-- Deshortify found an $unshorting_thing_were_looking_for for $url, and it points to $newurl\n" if ($verbose);
 
 				# If my iframe URL starts with a "/", treat it as a relative URL.
@@ -482,6 +492,9 @@ $unshort = sub{
 					{ $newurl = $scheme . "://" . $auth . $newurl; } # becomes http://server/$1
 
 				$newurl =~ s/&amp;/&/;	# Maybe we should escape all HTML entities, but this should suffice.
+
+				# Add to cache
+				$deshortify_cache{$original_url} = $newurl;
 
 				# Let's run the URL again - maybe this is another short link!
 				return &$unshort($newurl, $extpref_deshortifyretries);

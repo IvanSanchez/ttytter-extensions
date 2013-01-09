@@ -255,6 +255,7 @@ $unshort = sub{
 	    ($auth eq "imrn.me")	or
 	    ($auth eq "lnkd.in")	or	# Linkedin
 	    ($auth eq "monk.ly")	or
+	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
 	    ($auth eq "nblo.gs")	or	# Networked Blogs
 	    ($auth eq "neow.in")	or	# NeoWin
 	    ($auth eq "noti.ca")	or
@@ -302,10 +303,12 @@ $unshort = sub{
 	    ($auth eq "qwapo.es")	or
 	    ($auth eq "rafam.co")	or
 	    ($auth eq "refer.ly")	or
+	    ($auth eq "ripar.in")	or	# Riparian Data
 	    ($auth eq "secby.me")	or	# managed by bit.ly
 	    ($auth eq "short.ie")	or
 	    ($auth eq "short.to")	or
 	    ($auth eq "slate.me")	or	# The Slate
+#	    ($auth eq "spoti.fi")	or	# Spotify. Not really worth deshortening as the full URL doesn't contain valuable info (track name, etc)
 	    ($auth eq "s.shr.lc")	or	# Shareaholic, bitly-powered
 	    ($auth eq "s.vfs.ro")	or
 	    ($auth eq "tmblr.co")	or	# Tumblr
@@ -318,13 +321,14 @@ $unshort = sub{
 	    ($auth eq "keruff.it")	or
 	    ($auth eq "drudge.tw")	or
 	    ($auth eq "m.safe.mn")	or
-	    ($auth eq "pocket.co")	or	# GetPocket, also known as ReadItLater
+	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "on.rt.com")	or	# RT
 	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "feedly.com")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
+	    ($auth eq "on.io9.com")	or	# IO9
 	    ($auth eq "on.mash.to")	or	# Mashable
 	    ($auth eq "on.wsj.com")	or	# Wall Street Journal
 	    ($auth eq "theatln.tc")	or	# The Atlantic
@@ -335,7 +339,7 @@ $unshort = sub{
 	    ($auth eq "feeds.feedburner.com")	or
 	    ($auth eq "feedproxy.google.com")	or
 	    ($auth eq "www.pheedcontent.com")	or	# Oh, look, Imma l337 h4xx0r. Geez.
-	    ($auth =~ m/^news\.google\.[a-z]{2,3}$/)	or	# Hah! You thought you were going to pollute my links, did you, google news?
+#	    ($auth =~ m/^news\.google\.[a-z]{2,3}$/)	or	# Hah! You thought you were going to pollute my links, did you, google news?
 	    ($auth eq "www.linkedin.com" and $path eq "/slink")	or	# A tricky one. lnkd.in redirects to www.linkedin.com/slink?foo, which redirects again.
 	    ($auth =~ m/^feeds\./)	or	# OK, I've had enough of you, feeds.whatever.whatever!
 	    ($auth =~ m/feedsportal\.com$/)	or	# Gaaaaaaaaaaaaaaaah!
@@ -355,8 +359,8 @@ $unshort = sub{
 		$unshorting_regexp = qr/<input.* name=["']url["'] .*value=["'](.*?)["'].*/;
 		$unshorting_thing_were_looking_for = "<input name='url'> field";
 	}
-	elsif (($auth =~ m#\.visibli\.com$# and $path =~ m#^/share# ) or	# http://whatever.visibli.com/share
-	       ($auth =~ m#\.visibli\.com$# and $path =~ m#^/links# )	# http://whatever.visibli.com/links
+	elsif (($auth =~ m#\.visibli\.com$# and $path =~ m#^/share# ) or	# http://whatever.visibli.com/share/abc123
+	       ($auth =~ m#\.visibli\.com$# and $path =~ m#^/links# )	# http://whatever.visibli.com/links/abc123
 	      )
 	{
 		$unshorting_method = "REGEXP";	# For these servers, look for the first defined iframe
@@ -369,6 +373,13 @@ $unshort = sub{
 		$unshorting_method = "REGEXP";	# For these servers, look for the first defined javascript snippet with "window.location=foo"
 		$unshorting_regexp = qr/window.location\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_thing_were_looking_for = "window.location";
+	}
+	elsif (($auth =~ m/^news\.google\.[a-z]{2,3}$/)	# Actually, Google News changed strategy and no longer issues HTTP 302s.
+	      )
+	{
+		$unshorting_method = "REGEXP";	# For these servers, look for the first <meta http-equiv=refresh content='0;URL=http://foobar'> tag
+		$unshorting_regexp = qr/<meta\s*http-equiv=['"]refresh['"]\s*content=["']\d;URL=['"](.*?)["']\s*['"]\s*>;/i ;
+		$unshorting_thing_were_looking_for = "meta refresh";
 	}
 
 

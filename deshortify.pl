@@ -164,6 +164,7 @@ $unshort = sub{
 	    ($auth eq "q.gs")	or
 	    ($auth eq "n.pr")	or	# NPR, National Public Radio (USA)
 	    ($auth eq "t.co")	or	# twitter
+	    ($auth eq "v.gd")	or	# Ethical URL shortener by memset hosting
 	    ($auth eq "cl.ly")	or
 	    ($auth eq "db.tt")	or
 	    ($auth eq "ds.io")	or

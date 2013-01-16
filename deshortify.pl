@@ -197,6 +197,7 @@ $unshort = sub{
 	    ($auth eq "cur.lv")	or
 	    ($auth eq "dld.bz")	or
 	    ($auth eq "ebz.by")	or
+	    ($auth eq "esp.tl")	or	# Powered by bitly
 	    ($auth eq "fdl.me")	or
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
@@ -218,6 +219,7 @@ $unshort = sub{
 	    ($auth eq "owl.li")	or
 	    ($auth eq "pco.lt")	or
 	    ($auth eq "prn.to")	or	# PR News Wire
+	    ($auth eq "rdd.me")	or
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
 	    ($auth eq "rww.to")	or
@@ -245,6 +247,7 @@ $unshort = sub{
 	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "amba.to")	or	# Ameba.jp
 	    ($auth eq "buff.ly")	or
+	    ($auth eq "clic.bz")	or	# Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
 	    ($auth eq "cort.as")	or
 	    ($auth eq "dell.to")	or	# Dell
@@ -258,6 +261,7 @@ $unshort = sub{
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
 	    ($auth eq "imrn.me")	or
+	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
 	    ($auth eq "lnkd.in")	or	# Linkedin
 	    ($auth eq "monk.ly")	or
 	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
@@ -275,6 +279,7 @@ $unshort = sub{
 	    ($auth eq "seen.li")	or	($auth eq "seenthis.net" and $path eq "/index.php")	or # SeenThis, AKA http://seenthis.net/index.php?action=seenli&me=1ing
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
+	    ($auth eq "shrd.by")	or	# sharedby.co "Custom Engagement Bar and Analytics"
 	    ($auth eq "sml8.it")	or
 	    ($auth eq "tcrn.ch")	or	# Techcrunch
 	    ($auth eq "tiny.cc")	or
@@ -328,6 +333,7 @@ $unshort = sub{
 	    ($auth eq "drudge.tw")	or
 	    ($auth eq "m.safe.mn")	or
 	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
+	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "on.rt.com")	or	# RT
 	    ($auth eq "thebea.st")	or	# The Daily Beast

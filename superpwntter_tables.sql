@@ -58,7 +58,7 @@ CREATE TABLE users (
 	,default_profile	bool not null default false	-- Hasn't configured anything
 	,default_profile_image	bool not null default false	-- Egg avatar
 	,description	text
-	,favorites_count	int not null default 0	-- tweets this user has fav'd
+	,favourites_count	int not null default 0	-- tweets this user has fav'd
 	,follow_request_sent	bool -- Have I req'd following this protected acc't?
 	,following	bool -- deprecated
 	,followers_count	int not null default 0

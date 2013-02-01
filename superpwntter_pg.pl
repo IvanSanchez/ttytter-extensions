@@ -94,8 +94,18 @@ $handle = sub {
 	$fields_tweet->{'source_id'}     = &$pwntter_useragent_id( &descape($ref->{'source'}) );
 
 # 	print $stdout "-- Pwntter pre-geo\n" if ($verbose);
-	$fields_tweet->{'geo_lat'}       = $ref->{'geo'}->{'coordinates'}->[0];
-	$fields_tweet->{'geo_long'}      = $ref->{'geo'}->{'coordinates'}->[1];
+#   print Dumper($ref->{'geo'});
+    if (defined $ref->{'geo'}->{'coordinates'}->[0] and not $ref->{'geo'}->{'coordinates'}->[0] eq 'undef')
+    {
+      $fields_tweet->{'geo_lat'}       = $ref->{'geo'}->{'coordinates'}->[0];
+      $fields_tweet->{'geo_long'}      = $ref->{'geo'}->{'coordinates'}->[1];
+    }
+
+	#if ($fields_tweet->{'geo_lat'} eq undef)
+	#  { $fields_tweet->{'geo_lat'} = "null"; }
+	#if ($fields_tweet->{'geo_long'} eq undef)
+	#  { $fields_tweet->{'geo_long'} = "null"; }
+	  
 # 	print $stdout "-- Pwntter post-geo\n" if ($verbose);
 	if (defined ($ref->{'created_at'} ) )
 		{ $fields_tweet->{'created_at'}    = date_format(ParseDate($ref->{'created_at'})); }
@@ -516,8 +526,8 @@ our $pwntter_perform_query = sub {
 			my $comma = "";
 			if ($j > 0) { $comma = ","; }
 
-			$sql_update_fields .= "$comma`$fieldname`=?";
-			$sql_insert_fields .= "$comma`$fieldname`";
+			$sql_update_fields .= "$comma $fieldname =?";
+			$sql_insert_fields .= "$comma $fieldname ";
 			$sql_insert_values .= "$comma?";
 
 			$sql_bound_values[$j] = $fieldvalue;
@@ -531,9 +541,9 @@ our $pwntter_perform_query = sub {
 	my $sql_insert = "insert into $table ($sql_insert_fields) values ($sql_insert_values)";
 
 
-# 	print $sql_update . "\n";
-# 	print $sql_insert . "\n";
-# 	print Dumper(@sql_bound_values);
+ #	print $sql_update . "\n";
+ #	print $sql_insert . "\n";
+ #	print Dumper(@sql_bound_values);
 
 
 	# TODO: implement persistent or cached connections and statements.
@@ -559,7 +569,7 @@ our $pwntter_perform_query = sub {
 	{
 		print "-- Pwntter Inserting data in $table\n" if ($superverbose);
 		$ok = $stmt->execute(@sql_bound_values);
-		if ($ok) { $last = $dbh->last_insert_id(undef, undef, $table, undef); }
+#		if ($ok) { $last = $dbh->last_insert_id(undef, undef, $table, undef); }
 # 		print Dumper($ok);
 	}
 

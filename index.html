@@ -69,8 +69,9 @@ code.block
 <tr><td>MultiGeo</td><td><a href='#multigeo'>Info</a></td><td><a href='multigeo.pl'>Download</a></td><td>Show (geographically) where people are tweeting from.<br/>Also, comfortably add location metadata to your tweets. You need you <a href='http://gis.yohman.com/blog/2011/06/16/how-to-geo-enable-your-tweets/'>account to be geo-enabled</a> and run ttytter with <code>location=1</code> if you want to locate your tweets.</td></tr>
 <tr><td>Deshortify</td><td><a href='#deshortify'>Info</a></td><td><a href='deshortify.pl'>Download</a></td><td>Turns shortened URLs into full URLs. No more blindly cliking through links!</td></tr>
 <tr><td>Auto-Unfollow</td><td><a href='#autounfollow'>Info</a></td><td><a href='autounfollow.pl'>Download</a></td><td>Tired of half your timeline talking about something you couldn't care about? Set up a killword and anyone uttering it will be unfollowed.</td></tr>
-<tr><td>Hipstter</td><td><a href=''>Info</a></td><td><a href='hipstter.pl'>Download</a></td><td>The cool version of auto-unfollow. Because you don't like people who speak about trending topics.</td></tr>
+<tr><td>Hipstter</td><td><a href='#hipstter'>Info</a></td><td><a href='hipstter.pl'>Download</a></td><td>The cool version of auto-unfollow. Because you don't like people who speak about trending topics.</td></tr>
 <tr><td>LibCaca avatars</td><td><a href='#libcaca'>Info</a></td><td></td><td>A tip on how to see profile photos when running a <code>/whois</code> command</td></tr>
+<tr><td>SuperPwntter</td><td><a href='#superpwntter'>Info</a></td><td></td><td>Supervitaminated version of @pr4wn's pwntter. This logs most of all available data to a database. Beta!™®</td></tr>
 </table>
 
 
@@ -103,7 +104,7 @@ dostream=1</code></p>
 
 <p>Besides TTYtter and its requirements, you might need additional perl libraries:</p>
 
-<table border=0 cellspacing=5><tr>
+<blockquote><table border=0 cellspacing=5><tr>
 <th style='background:#C0C0FF; width:33%;'>For this extension</td>
 <th style='background:#C0FFFF; width:33%;'>install this package</td>
 <th style='background:#C0FFC0; width:33%;'>or manually run</td></tr>
@@ -115,11 +116,11 @@ dostream=1</code></p>
 
 </td><td style='background:#E8E8E8;'>
 
-libnet-gpsd3-perl
+<div>libnet-gpsd3-perl</div>
 
 </td><td style='background:#E8E8E8;'>
 
-cpan Net::GPSD3
+<div>cpan Net::GPSD3</div>
 
 </td></tr><tr><td style='background:#E8E8E8;'>
 
@@ -128,11 +129,11 @@ cpan Net::GPSD3
 
 </td><td style='background:#E8E8E8;'>
 
-libgeo-ip-perl
+<div>libgeo-ip-perl</div>
 
 </td><td style='background:#E8E8E8;'>
 
-cpan Geo::IP
+<div>cpan Geo::IP</div>
 
 </td></tr><tr><td style='background:#E8E8E8;'>
 
@@ -140,8 +141,8 @@ cpan Geo::IP
 
 </td><td style='background:#E8E8E8;'>
 
-<div>libwww-perl
-<div>liburi-find-perl
+<div>libwww-perl</div>
+<div>liburi-find-perl</div>
 
 </td><td style='background:#E8E8E8;'>
 
@@ -159,9 +160,37 @@ cpan Geo::IP
 
 </td><td style='background:#E8E8E8;'>
 
-cpan Text::ParseWords
+<div>cpan Text::ParseWords</div>
 
-</td></tr></table>
+</td></tr><tr><td style='background:#E8E8E8;'>
+
+<div>superpwntter.pl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+<div>libdbd-mysql-perl</div>
+<div>libdate-manip-perl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+<div>cpan DBD::mysql</div>
+<div>cpan Date::Manip</div>
+
+</td></tr><tr><td style='background:#E8E8E8;'>
+
+<div>superpwntter_pg.pl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+<div>libdbd-pg-perl</div>
+<div>libdate-manip-perl</div>
+
+</td><td style='background:#E8E8E8;'>
+
+<div>cpan DBD::Pg</div>
+<div>cpan Date::Manip</div>
+
+</td></tr></table></blockquote>
 
 
 
@@ -474,6 +503,101 @@ I release auto-unfollow and what happens 5 minutes later? This.
 <p>On a non-georelated note, consider using the <a href='http://caca.zoy.org/wiki/libcaca'>libcaca</a> utilities (<code>apt-get install caca-utils</code> on Debian-like systems) for displaying the avatar image (when doing <code>/whois username</code>), by adding this line to .ttytterrc:</p>
 
 <p><code class='block'>avatar=wget -q %U -O /tmp/avatar &amp;&amp; img2txt -f utf8 /tmp/avatar</code></p>
+
+
+
+
+
+
+
+
+<hr>
+
+<a name='superpwntter'><h3>SuperPwntter</h3></a>
+
+<p>I know that <a href='http://twitter.com/pr4wn'>@pr4wn</a> has been using some of my ttytter extensions for a while, so I decided to give <a href='http://prawnuk.blogspot.com.es/2011/03/introducing-pwntter.html'>pwntter</a> a try. And it's nice, but I felt it lacked some functionality, specifically logging some metadata introduced with the Twitter API 1.1.</p>
+
+<p>For a few months now, I've been developing SuperPwntter. It's much like pwntter, but super. Logs to several tables, logs user data, tweet data, location data, mentions, and what not. Unfortunately, <strong>it's still under development</strong>, so caution is advised!</p>
+
+<p>If you want to try it out, you'll need several files:</p>
+
+
+<blockquote><table border=0 cellspacing=5><tr>
+<th style='background:#C0C0FF;'>File</td>
+<th style='background:#C0FFFF;'>what does it do</td>
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='superpwntter.pl'>superpwntter.pl</a></div>
+	</td><td style='background:#E8E8E8;'>
+		The main extension. This is what you add to your .ttytterrc file. By now, this file only works for MySQL databases.
+	</td>
+</tr>
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='superpwntter_pg.pl'>superpwntter_pg.pl</a></div>
+	</td><td style='background:#E8E8E8;'>
+		Pretty much like superpwntter.pl, but modified for use with PostgreSQL databases.
+	</td>
+</tr>
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='superpwntter_tables.sql'>superpwntter_tables.sql</a></div>
+	</td><td style='background:#E8E8E8;'>
+		Database creation script. Works best with MySQL tables.
+	</td>
+</tr>
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='superpwntter_tables_pg.sql'>superpwntter_tables_pg.sql</a></div>
+	</td><td style='background:#E8E8E8;'>
+		Pretty much like superpwntter_tables.sql, but tailored for PostgreSQL databases.
+	</td>
+</tr>
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='chart.php'>chart.php</a></div>
+	</td><td style='background:#E8E8E8;'>
+		Report script. Needs a web server with PHP and MySQL support for PHP.
+	</td>
+</tr>
+
+
+<tr>
+	<td style='background:#E8E8E8;'>
+	<div><a href='chart_pg.php'>chart_pg.php</a></div>
+	</td><td style='background:#E8E8E8;'>
+		Pretty much like chart.php, but tailored for PostgreSQL. Needs PostgreSQL support for PHP.
+	</td>
+</tr>
+
+
+
+</table>
+
+<h4>Installation notes</h4>
+
+<p>You should be able to create your database according to your favourite DB engine, and run the commands inside the SQL file for creating your tables and populating the initial data.</p>
+
+<p>After that, make sure that both the extension .pl file and the reports .php file are set with the correct database name, username and password. Remember to add the .pl file to the .ttytterrc extensions and put the .php file somewhere where your web server will process it.</p>
+
+
+
+<h4>Known issues</h4>
+
+<p>Lots. This is still under development, so use with care. I still have to refactor code to be more database-agnostic and implement a few missing things. Feel free to add issues to the <a href='https://github.com/IvanSanchez/ttytter-extensions/issues'>GitHub issue tracker</a> (and I'll feel free to ignore them since I work on this in my spare time). Pull requests are welcome.</p>
+
+</blockquote>
+
+
+<p>Acknowledments to <a href='http://twitter.com/pr4wn'>@pr4wn</a> for the original pwntter, to <a href='http://twitter.com/xurxosanz'>@xurxosanz</a> for bug-testing this and <a href='http://twitter.com/vehrka'>@vehrka</a> for fixing up PostgreSQL support.</p>
+
+
+
 
 </body>
 </html>

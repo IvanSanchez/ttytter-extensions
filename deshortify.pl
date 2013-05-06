@@ -157,6 +157,7 @@ $unshort = sub{
 
 	my $unshorting_method = none;
 	my $unshorting_regexp;
+	my $unshorting_override = 0;
 
 	# Gathered a few shorteners. Should not be considered as a comprehensive list, but it'll do.
 	if (($auth eq "g.co")	or	# Google
@@ -184,14 +185,14 @@ $unshort = sub{
 	    ($auth eq "tl.gd")	or	# Twitlonger
 	    ($auth eq "tr.im")	or
 	    ($auth eq "wp.me")	or	# Wordpress
-	    ($auth eq "wj.la")	or	# ABC7 News (washington)
+	    ($auth eq "wj.la")	or      # ABC7 News (washington)
 	    ($auth eq "adf.ly")	or
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
 	    ($auth eq "bit.ly")	or
 	    ($auth eq "cdb.io")	or
+	    ($auth eq "cbc.sh") or	# leads to cbc.ca. Congrats, four characters saved.
 	    ($auth eq "cgd.to")	or
-	    ($auth eq "cbc.sh")	or	# leads to cbc.ca. Congrats, four characters saved.
 	    ($auth eq "chn.ge")	or	# Change.org
 	    ($auth eq "cli.gs")	or
 	    ($auth eq "cor.to")	or
@@ -200,9 +201,9 @@ $unshort = sub{
 	    ($auth eq "cur.lv")	or
 	    ($auth eq "dld.bz")	or
 	    ($auth eq "ebz.by")	or
-	    ($auth eq "esp.tl")	or	# Powered by bitly
+	    ($auth eq "esp.tl") or	# Powered by bitly
 	    ($auth eq "fdl.me")	or
-	    ($auth eq "fon.gs")	or	# Fon Get Simple (By the fon.com guys)
+	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
 	    ($auth eq "goo.gl")	or	# Google
@@ -220,11 +221,11 @@ $unshort = sub{
 	    ($auth eq "muo.fm")	or	# MakeUseOf
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ofa.bo")	or
-	    ($auth eq "osf.to")	or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
+	    ($auth eq "osf.to") or	# Open Society Foundation
 	    ($auth eq "pco.lt")	or
 	    ($auth eq "prn.to")	or	# PR News Wire
-	    ($auth eq "rdd.me")	or
+	    ($auth eq "rdd.me") or
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
 	    ($auth eq "rww.to")	or
@@ -255,6 +256,7 @@ $unshort = sub{
 	    ($auth eq "clic.bz")	or	# Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
 	    ($auth eq "cort.as")	or
+	    ($auth eq "cutv.ws")	or	# cultureunplugged.com
 	    ($auth eq "cyha.es")	or	# CyberHades.com
 	    ($auth eq "dell.to")	or	# Dell
 	    ($auth eq "disq.us")	or
@@ -369,7 +371,9 @@ $unshort = sub{
 	    ($auth =~ m/^redirect\./)	or	# redirect.viglink.com and others
 	    ($auth eq "www.google.com" and $path eq "/url")	or	# I hate it when people paste URLs from the stupid google url tracker.
 	    ($auth eq "traffic.shareaholic.com")	or	# Yet another traffic counter
-	    ($path =~ m#^/wf/click# )	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
+	    ($path =~ m#^/wf/click# )	or	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
+	    ($query =~ m#utm_source=# )	or	# Any URL from *any* server which contains "utm_source="
+	    ($query =~ m#utm_medium=# )	# Any URL from *any* server which contains "utm_medium="
 	    )
 	{
 		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request
@@ -388,11 +392,12 @@ $unshort = sub{
 		$unshorting_regexp = qr/<iframe .*src=["'](.*?)["'].*>/;
 		$unshorting_thing_were_looking_for = "iframe";
 	}
-	elsif (($auth eq "bota.me")	or
-	       ($auth eq "op.to")	or	($auth eq "www.op.to")
-	       )
+	elsif (($auth eq "bota.me")     or
+	       ($auth eq "op.to")       or      ($auth eq "www.op.to")
+	      )
 	{
 		$unshorting_method = "REGEXP";	# For these servers, look for the first defined javascript snippet with "window.location=foo"
+# 		$unshorting_regexp = qr/window.location\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_regexp = qr/window\.location(\.href)?\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_thing_were_looking_for = "window.location";
 	}
@@ -410,6 +415,22 @@ $unshort = sub{
 		$unshorting_regexp = qr#<h2 class="postTitleView"><a href="(.*?)"# ;
 # 		<h2 class="postTitleView"><a href="https://www.youtube.com/watch?v=LKtbZvWDhKk" onclick="trackPostClick(3994760072); r
 		$unshorting_thing_were_looking_for = "scoop.it article";
+	}
+	elsif ( $extpref_deshortifyalways )
+	{
+		# Skip some well-known servers
+		if (
+			(not $auth eq "youtu.be") and	# Full link doesn't add any info
+			(not $auth eq "spoti.fi") and	# Full link doesn't add any info
+			(not $auth eq "4sq.com") and	# Full link doesn't add any info
+			(not $auth =~ m#blogspot.com$#) and	# blogspot.com always redirects to a nearby (geolocated) server
+
+			1
+			)
+		{
+			$unshorting_method = "HEAD";
+			$unshorting_override = 1;
+		}
 	}
 
 
@@ -480,6 +501,7 @@ $unshort = sub{
 # 			$url = $response->request->uri;
 			$url = $response->header( "Location" );
 			print "-- Deshortened: $original_url -> $url\n" if ($verbose);
+			print "-- New shortener found: $original_url -> $url\n" if ($unshorting_override);
 
 			# Add to cache
 			$deshortify_cache{$original_url} = $url;

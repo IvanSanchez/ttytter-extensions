@@ -184,12 +184,14 @@ $unshort = sub{
 	    ($auth eq "tl.gd")	or	# Twitlonger
 	    ($auth eq "tr.im")	or
 	    ($auth eq "wp.me")	or	# Wordpress
+	    ($auth eq "wj.la")	or	# ABC7 News (washington)
 	    ($auth eq "adf.ly")	or
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
 	    ($auth eq "bit.ly")	or
 	    ($auth eq "cdb.io")	or
 	    ($auth eq "cgd.to")	or
+	    ($auth eq "cbc.sh")	or	# leads to cbc.ca. Congrats, four characters saved.
 	    ($auth eq "chn.ge")	or	# Change.org
 	    ($auth eq "cli.gs")	or
 	    ($auth eq "cor.to")	or
@@ -200,6 +202,7 @@ $unshort = sub{
 	    ($auth eq "ebz.by")	or
 	    ($auth eq "esp.tl")	or	# Powered by bitly
 	    ($auth eq "fdl.me")	or
+	    ($auth eq "fon.gs")	or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
 	    ($auth eq "goo.gl")	or	# Google
@@ -217,6 +220,7 @@ $unshort = sub{
 	    ($auth eq "muo.fm")	or	# MakeUseOf
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ofa.bo")	or
+	    ($auth eq "osf.to")	or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
 	    ($auth eq "pco.lt")	or
 	    ($auth eq "prn.to")	or	# PR News Wire
@@ -323,6 +327,7 @@ $unshort = sub{
 	    ($auth eq "slate.me")	or	# The Slate
 #	    ($auth eq "spoti.fi")	or	# Spotify. Not really worth deshortening as the full URL doesn't contain valuable info (track name, etc)
 	    ($auth eq "s.shr.lc")	or	# Shareaholic, bitly-powered
+	    ($auth eq "s.si.edu")	or	# Smithsonian
 	    ($auth eq "s.vfs.ro")	or
 	    ($auth eq "tmblr.co")	or	# Tumblr
 	    ($auth eq "twurl.nl")	or
@@ -340,6 +345,7 @@ $unshort = sub{
 	    ($auth eq "on.rt.com")	or	# RT
 	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "eepurl.com")	or
+	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
 	    ($auth eq "on.io9.com")	or	# IO9
@@ -348,6 +354,7 @@ $unshort = sub{
 	    ($auth eq "theatln.tc")	or	# The Atlantic
 	    ($auth eq "to.pbs.org")	or	# PBS
 	    ($auth eq "tinyurl.com")	or
+	    ($auth eq "trackurl.it")	or
 	    ($auth eq "www.tumblr.com")	or
 	    ($auth eq "feeds.gawker.com")	or
 	    ($auth eq "feeds.feedburner.com")	or

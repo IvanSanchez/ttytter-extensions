@@ -32,7 +32,6 @@
 #
 # Be advised: this extension will send HTTP HEAD requests to all the URLs to be resolved. Be warned of this if you're concerned about privacy.
 #
-# TODO: Add a redirect config value, so users can set "I don't care about making more useless requests that will take my precious time, just resolve the URL for good!"
 # TODO: Allow a screen width to be specified, and then don't de-shortify links if the width of the tweet would exceed that. Or get the screen width from the environment somehow.
 # TODO: Add a carriage return (but no line feed) ANSI control char, after the links have been deshortified. If you're writing something while URLs are being resolved, the display will be messed up. Hopefully a CR will help hide the problem. Update: ANSI control chars to move the cursor or clear the current line will fail miserably; all I managed is to add a blank line between tweets. It seems that it has something to do with ReadLine::TTYtter.
 # TODO: Fix TTYtter so that search and tracked keywords are shown with the "Bold on" and "bold off" ANSI sequences instead of "bold on" and "reset". Right now URL underlining will be messed up if the full URL contains the keyword. Hopefully this can be done in 2.1.0 or 2.2.0.
@@ -181,17 +180,17 @@ $unshort = sub{
 	    ($auth eq "po.st")	or
 	    ($auth eq "su.pr")	or
 	    ($auth eq "ti.me")	or
-	    ($auth eq "to.ly")	or
 	    ($auth eq "tl.gd")	or	# Twitlonger
+	    ($auth eq "to.ly")	or
 	    ($auth eq "tr.im")	or
+	    ($auth eq "wj.la")	or	# ABC7 News (washington)
 	    ($auth eq "wp.me")	or	# Wordpress
-	    ($auth eq "wj.la")	or      # ABC7 News (washington)
 	    ($auth eq "adf.ly")	or
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
 	    ($auth eq "bit.ly")	or
-	    ($auth eq "cdb.io")	or
 	    ($auth eq "cbc.sh") or	# leads to cbc.ca. Congrats, four characters saved.
+	    ($auth eq "cdb.io")	or
 	    ($auth eq "cgd.to")	or
 	    ($auth eq "chn.ge")	or	# Change.org
 	    ($auth eq "cli.gs")	or
@@ -206,8 +205,8 @@ $unshort = sub{
 	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
-	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "glo.bo")	or	# Brazilian Globo
+	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "grn.bz")	or
 	    ($auth eq "gu.com")	or	# The Guardian
 	    ($auth eq "htl.li")	or
@@ -221,28 +220,29 @@ $unshort = sub{
 	    ($auth eq "muo.fm")	or	# MakeUseOf
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ofa.bo")	or
-	    ($auth eq "owl.li")	or
 	    ($auth eq "osf.to") or	# Open Society Foundation
+	    ($auth eq "owl.li")	or
 	    ($auth eq "pco.lt")	or
 	    ($auth eq "prn.to")	or	# PR News Wire
+	    ($auth eq "r88.it")	or
 	    ($auth eq "rdd.me") or
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
 	    ($auth eq "rww.to")	or
-	    ($auth eq "r88.it")	or
 	    ($auth eq "sbn.to")	or
 	    ($auth eq "sco.lt")	or
 	    ($auth eq "s.coop")	or	# Cooperative shortening
 	    ($auth eq "see.sc")	or
 	    ($auth eq "smf.is")	or	# Summify
 	    ($auth eq "sns.mx")	or	# SNS analytics
+	    ($auth eq "soa.li")	or
 	    ($auth eq "soc.li")	or
 	    ($auth eq "sta.mn")	or	# Stamen - Gotta love these guys' maps!
 	    ($auth eq "tgn.me")	or
 	    ($auth eq "tgr.ph")	or	# The Telegraph
 	    ($auth eq "tnw.to")	or	# TheNextWeb
-	    ($auth eq "tny.gs") or
 	    ($auth eq "tny.cz") or
+	    ($auth eq "tny.gs") or
 	    ($auth eq "tpm.ly")	or
 	    ($auth eq "tpt.to")	or
 	    ($auth eq "ur1.ca")	or
@@ -250,8 +250,8 @@ $unshort = sub{
 	    ($auth eq "vsb.ly")	or
 	    ($auth eq "wh.gov")	or	# Whitehouse.gov
 	    ($auth eq "6sen.se")	or
-	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "amba.to")	or	# Ameba.jp
+	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "buff.ly")	or
 	    ($auth eq "clic.bz")	or	# Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
@@ -293,14 +293,16 @@ $unshort = sub{
 	    ($auth eq "tiny.cc")	or
 	    ($auth eq "trib.al")	or	($auth =~ m/\.trib\.al$/ )	or	# whatever.trib.al is done by SocialFlow
 	    ($auth eq "untp.it")	or	# Untap, via Bitly
+	    ($auth eq "usat.ly")	or	# USA Today
 	    ($auth eq "vrge.co")	or	# The Verge
-	    ($auth eq "yhoo.it")	or	# Yahoo
-	    ($auth eq "xfru.it")	or
 	    ($auth eq "wapo.st")	or	# Washington Post
+	    ($auth eq "xfru.it")	or
 	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
 	    ($auth eq "xurl.es")	or
+	    ($auth eq "yhoo.it")	or	# Yahoo
 	    ($auth eq "zite.to")	or
 	    ($auth eq "a.eoi.co")	or	# Escuela de Organización Industrial
+	    ($auth eq "a.eoi.es")	or	# Escuela de Organización Industrial
 	    ($auth eq "amzn.com")	or	# Amazon.com
 	    ($auth eq "bloom.bg")	or	# Bloomberg News
 	    ($auth eq "buswk.co")	or	# Business Week
@@ -308,8 +310,8 @@ $unshort = sub{
 	    ($auth eq "egent.me")	or
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
 	    ($auth eq "flpbd.it")	or	# Flipboard
-	    ($auth eq "mcmgz.in")	or	# Mac Magazine
 	    ($auth eq "mbist.ro")	or	# MediaBistro
+	    ($auth eq "mcmgz.in")	or	# Mac Magazine
 	    ($auth eq "menea.me")	or	# Menéame
 	    ($auth eq "mhoff.me")	or
 	    ($auth eq "migre.me")	or
@@ -333,18 +335,18 @@ $unshort = sub{
 	    ($auth eq "s.vfs.ro")	or
 	    ($auth eq "tmblr.co")	or	# Tumblr
 	    ($auth eq "twurl.nl")	or
+	    ($auth eq "w.abc.es")	or
 	    ($auth eq "ymlp.com")	or
 #	    ($auth eq "youtu.be")	or	# This one is actually useful: no information is gained by de-shortening.
-	    ($auth eq "w.abc.es")	or
 	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
-	    ($auth eq "keruff.it")	or
 	    ($auth eq "drudge.tw")	or
+	    ($auth eq "keruff.it")	or
 	    ($auth eq "m.safe.mn")	or
-	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
-	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "on.rt.com")	or	# RT
+	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
+	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
@@ -424,6 +426,7 @@ $unshort = sub{
 			(not $auth eq "spoti.fi") and	# Full link doesn't add any info
 			(not $auth eq "4sq.com") and	# Full link doesn't add any info
 			(not $auth =~ m#blogspot.com$#) and	# blogspot.com always redirects to a nearby (geolocated) server
+			(not $auth eq "www.facebook.com") and	# facebook.com will redirect any page to fb.com/unsupportedbrowser due to user-agent
 
 			1
 			)
@@ -510,7 +513,7 @@ $unshort = sub{
 			return &$unshort($url, $extpref_deshortifyretries);
 		}
 		elsif (not $response->is_success)	# Not a HTTP 20X code
-			{ &$unshort_retry($url, $retries_left, $response->status_line); }
+			{ return &$unshort_retry($url, $retries_left, $response->status_line); }
 
 		# Once we've checked for Location: headers, check for the contents if we're using the REGEXP method )only if the document retrieval has been successful)
 		elsif ($unshorting_method eq "REGEXP")
@@ -545,7 +548,9 @@ $unshort = sub{
 			return $url;
 		}
 	}
-	else	# Unrecognised server
+
+
+	# Unrecognised server, or no valid response
 	{
 		print $stdout "-- That URL doesn't seem like it's a URL shortener, it must be the real one.\n" if ($superverbose);
 

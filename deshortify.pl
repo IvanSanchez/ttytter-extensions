@@ -186,6 +186,7 @@ $unshort = sub{
 	    ($auth eq "wj.la")	or	# ABC7 News (washington)
 	    ($auth eq "wp.me")	or	# Wordpress
 	    ($auth eq "adf.ly")	or
+	    ($auth eq "aol.it")	or	# AOL, America OnLine
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
 	    ($auth eq "bit.ly")	or
@@ -198,6 +199,7 @@ $unshort = sub{
 	    ($auth eq "cos.as")	or
 	    ($auth eq "cot.ag")	or
 	    ($auth eq "cur.lv")	or
+	    ($auth eq "del.ly")	or	# Powered by Sprinklr
 	    ($auth eq "dld.bz")	or
 	    ($auth eq "ebz.by")	or
 	    ($auth eq "esp.tl") or	# Powered by bitly
@@ -252,6 +254,7 @@ $unshort = sub{
 	    ($auth eq "6sen.se")	or
 	    ($auth eq "amba.to")	or	# Ameba.jp
 	    ($auth eq "amzn.to")	or	# Amazon.com
+	    ($auth eq "apne.ws")	or	# AP news
 	    ($auth eq "buff.ly")	or
 	    ($auth eq "clic.bz")	or	# Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
@@ -259,6 +262,7 @@ $unshort = sub{
 	    ($auth eq "cutv.ws")	or	# cultureunplugged.com
 	    ($auth eq "cyha.es")	or	# CyberHades.com
 	    ($auth eq "dell.to")	or	# Dell
+	    ($auth eq "dive.im")	or	# DiveMedia Solutions
 	    ($auth eq "disq.us")	or
 	    ($auth eq "dlvr.it")	or
 	    ($auth eq "econ.st")	or	# The Economist
@@ -270,6 +274,7 @@ $unshort = sub{
 	    ($auth eq "huff.to")	or	# The Huffington Post
 	    ($auth eq "imrn.me")	or
 	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
+	    ($auth eq "likr.es")	or	# Powered by TribApp
 	    ($auth eq "lnkd.in")	or	# Linkedin
 	    ($auth eq "monk.ly")	or
 	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
@@ -310,6 +315,7 @@ $unshort = sub{
 	    ($auth eq "egent.me")	or
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
 	    ($auth eq "flpbd.it")	or	# Flipboard
+	    ($auth eq "maril.in")	or	# Marilink
 	    ($auth eq "mbist.ro")	or	# MediaBistro
 	    ($auth eq "mcmgz.in")	or	# Mac Magazine
 	    ($auth eq "menea.me")	or	# Menéame
@@ -333,6 +339,7 @@ $unshort = sub{
 	    ($auth eq "s.shr.lc")	or	# Shareaholic, bitly-powered
 	    ($auth eq "s.si.edu")	or	# Smithsonian
 	    ($auth eq "s.vfs.ro")	or
+	    ($auth eq "tbbhd.me")	or	# Powered by bit.ly
 	    ($auth eq "tmblr.co")	or	# Tumblr
 	    ($auth eq "twurl.nl")	or
 	    ($auth eq "w.abc.es")	or
@@ -348,6 +355,7 @@ $unshort = sub{
 	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "thebea.st")	or	# The Daily Beast
+	    ($auth eq "wwhts.com")	or	# WWWhatsNew, powered by bit.ly
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
@@ -371,11 +379,14 @@ $unshort = sub{
 	    ($auth =~ m/^rss\./)	or	# Will this never end?
 	    ($auth =~ m/^rd\.yahoo\./)	or	# Yahoo feeds... *sigh*
 	    ($auth =~ m/^redirect\./)	or	# redirect.viglink.com and others
+	    ($auth =~ m#.tuu.gs$#)	or	# whatever.tuu.gs powered by Tweet User URL
+	    ($auth =~ m#.sharedby.co$#)	or	# whatever.sharedby.co
 	    ($auth eq "www.google.com" and $path eq "/url")	or	# I hate it when people paste URLs from the stupid google url tracker.
 	    ($auth eq "traffic.shareaholic.com")	or	# Yet another traffic counter
 	    ($path =~ m#^/wf/click# )	or	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
-	    ($query =~ m#utm_source=# )	or	# Any URL from *any* server which contains "utm_source="
-	    ($query =~ m#utm_medium=# )	# Any URL from *any* server which contains "utm_medium="
+	    ($query =~ m#utm_source=# )	or	# Any URL from *any* server which contains "utm_source=" looks like a social SEO marketing campaign-speech-enabled linkification
+	    ($query =~ m#utm_medium=# )	or	# Any URL from *any* server which contains "utm_medium=" looks like a social SEO marketing campaign-speech-enabled linkification
+	    ($query =~ m#url=http# )	# Any URL from *any* server which contains "url=http" looks like a redirector
 	    )
 	{
 		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request
@@ -425,6 +436,7 @@ $unshort = sub{
 			(not $auth eq "youtu.be") and	# Full link doesn't add any info
 			(not $auth eq "spoti.fi") and	# Full link doesn't add any info
 			(not $auth eq "4sq.com") and	# Full link doesn't add any info
+			(not $auth eq "flic.kr") and	# Full link doesn't add any info
 			(not $auth =~ m#blogspot.com$#) and	# blogspot.com always redirects to a nearby (geolocated) server
 			(not $auth eq "www.facebook.com") and	# facebook.com will redirect any page to fb.com/unsupportedbrowser due to user-agent
 

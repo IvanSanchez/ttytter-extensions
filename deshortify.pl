@@ -23,16 +23,16 @@
 #  * Replaces URL-encoded UTF-8 in the URL body for the corresponding character (i.e. "%C4%99" turns into "ę"). Hopefully this won't mess up non-UTF-8 systems.
 #  * Proxy support. Deshortify will try to fetch proxy config from environment variables. Tor users will be interested in adding the following to their .ttytterrc file:
 #       extpref_deshortifyproxy=socks://localhost:9050
+#  * Proper support for relative URLs
 #
 # Bugs and gotchas:
 #  * Might fail to resolve a URL you just posted in stream mode: the t.co shortener needs a couple of seconds after the tweet was posted in order to be able to resolve the URLs.
-#  * Might fail to maintain the integrity of a URL with lots of URL-encoded = and & and / and whatnot. Apply the trick commented in the code and report back to me, will you?
+#  * Might fail to maintain the integrity of a URL with lots of URL-encoded = and & and / and spaces whatnot. Apply the trick commented in the code and report back to me, will you?
 #  * Proxy configuration is deshortify-specific. Deshortify uses perl's LWP::UserAgent instead of lynx or curl. If you use a proxy, you'll have to configure ttytter and deshortify separately.
 #  * Verbose mode is verbose. Very.
 #
 # Be advised: this extension will send HTTP HEAD requests to all the URLs to be resolved. Be warned of this if you're concerned about privacy.
 #
-# TODO: Add a redirect config value, so users can set "I don't care about making more useless requests that will take my precious time, just resolve the URL for good!"
 # TODO: Allow a screen width to be specified, and then don't de-shortify links if the width of the tweet would exceed that. Or get the screen width from the environment somehow.
 # TODO: Add a carriage return (but no line feed) ANSI control char, after the links have been deshortified. If you're writing something while URLs are being resolved, the display will be messed up. Hopefully a CR will help hide the problem. Update: ANSI control chars to move the cursor or clear the current line will fail miserably; all I managed is to add a blank line between tweets. It seems that it has something to do with ReadLine::TTYtter.
 # TODO: Fix TTYtter so that search and tracked keywords are shown with the "Bold on" and "bold off" ANSI sequences instead of "bold on" and "reset". Right now URL underlining will be messed up if the full URL contains the keyword. Hopefully this can be done in 2.1.0 or 2.2.0.
@@ -157,6 +157,7 @@ $unshort = sub{
 
 	my $unshorting_method = none;
 	my $unshorting_regexp;
+	my $unshorting_override = 0;
 
 	# Gathered a few shorteners. Should not be considered as a comprehensive list, but it'll do.
 	if (($auth eq "g.co")	or	# Google
@@ -177,17 +178,21 @@ $unshort = sub{
 	    ($auth eq "me.lt")	or
 	    ($auth eq "om.ly")	or
 	    ($auth eq "ow.ly")	or
-	    ($auth eq "po.st")	or
+# 	    ($auth eq "po.st")	or	# Doesn't allow HTTP HEAD requests, doing GET requests.
 	    ($auth eq "su.pr")	or
 	    ($auth eq "ti.me")	or
-	    ($auth eq "to.ly")	or
 	    ($auth eq "tl.gd")	or	# Twitlonger
+	    ($auth eq "to.ly")	or
 	    ($auth eq "tr.im")	or
+	    ($auth eq "wj.la")	or	# ABC7 News (washington)
 	    ($auth eq "wp.me")	or	# Wordpress
 	    ($auth eq "adf.ly")	or
+	    ($auth eq "aka.ms")	or	# Microsoft's "Social eXperience Platform"
+	    ($auth eq "aol.it")	or	# AOL, America OnLine
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
 	    ($auth eq "bit.ly")	or
+	    ($auth eq "cbc.sh") or	# leads to cbc.ca. Congrats, four characters saved.
 	    ($auth eq "cdb.io")	or
 	    ($auth eq "cgd.to")	or
 	    ($auth eq "chn.ge")	or	# Change.org
@@ -196,14 +201,16 @@ $unshort = sub{
 	    ($auth eq "cos.as")	or
 	    ($auth eq "cot.ag")	or
 	    ($auth eq "cur.lv")	or
+	    ($auth eq "del.ly")	or	# Powered by Sprinklr
 	    ($auth eq "dld.bz")	or
 	    ($auth eq "ebz.by")	or
-	    ($auth eq "esp.tl")	or	# Powered by bitly
+	    ($auth eq "esp.tl") or	# Powered by bitly
 	    ($auth eq "fdl.me")	or
+	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
-	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "glo.bo")	or	# Brazilian Globo
+	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "grn.bz")	or
 	    ($auth eq "gu.com")	or	# The Guardian
 	    ($auth eq "htl.li")	or
@@ -212,32 +219,40 @@ $unshort = sub{
 	    ($auth eq "ind.pn")	or	# The Independent.co.uk
 	    ($auth eq "kck.st")	or	# Kickstarter
 	    ($auth eq "kcy.me")	or	# Karmacracy
+	    ($auth eq "kng.ht")	or	# Knight Foundation
 	    ($auth eq "mbl.mx")	or
 	    ($auth eq "mun.do")	or	# El Mundo
 	    ($auth eq "muo.fm")	or	# MakeUseOf
 	    ($auth eq "mzl.la")	or	# Mozilla
+	    ($auth eq "ngr.nu")	or	# Powered by bit.ly
 	    ($auth eq "ofa.bo")	or
+	    ($auth eq "osf.to") or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
 	    ($auth eq "pco.lt")	or
 	    ($auth eq "prn.to")	or	# PR News Wire
-	    ($auth eq "rdd.me")	or
+	    ($auth eq "r88.it")	or
+	    ($auth eq "rdd.me") or
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
+	    ($auth eq "rpx.me")	or	# http://janrain.com, social media company
 	    ($auth eq "rww.to")	or
-	    ($auth eq "r88.it")	or
 	    ($auth eq "sbn.to")	or
 	    ($auth eq "sco.lt")	or
 	    ($auth eq "s.coop")	or	# Cooperative shortening
 	    ($auth eq "see.sc")	or
+	    ($auth eq "sfy.co")	or	# Storify
 	    ($auth eq "smf.is")	or	# Summify
 	    ($auth eq "sns.mx")	or	# SNS analytics
+	    ($auth eq "soa.li")	or
 	    ($auth eq "soc.li")	or
+	    ($auth eq "spr.ly")	or	# Sprinklr
 	    ($auth eq "sta.mn")	or	# Stamen - Gotta love these guys' maps!
 	    ($auth eq "tgn.me")	or
 	    ($auth eq "tgr.ph")	or	# The Telegraph
+	    ($auth eq "tnw.co")	or	# TheNextWeb
 	    ($auth eq "tnw.to")	or	# TheNextWeb
-	    ($auth eq "tny.gs") or
 	    ($auth eq "tny.cz") or
+	    ($auth eq "tny.gs") or
 	    ($auth eq "tpm.ly")	or
 	    ($auth eq "tpt.to")	or
 	    ($auth eq "ur1.ca")	or
@@ -245,14 +260,17 @@ $unshort = sub{
 	    ($auth eq "vsb.ly")	or
 	    ($auth eq "wh.gov")	or	# Whitehouse.gov
 	    ($auth eq "6sen.se")	or
-	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "amba.to")	or	# Ameba.jp
+	    ($auth eq "amzn.to")	or	# Amazon.com
+	    ($auth eq "apne.ws")	or	# AP news
 	    ($auth eq "buff.ly")	or
 	    ($auth eq "clic.bz")	or	# Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
 	    ($auth eq "cort.as")	or
+	    ($auth eq "cutv.ws")	or	# cultureunplugged.com
 	    ($auth eq "cyha.es")	or	# CyberHades.com
 	    ($auth eq "dell.to")	or	# Dell
+	    ($auth eq "dive.im")	or	# DiveMedia Solutions
 	    ($auth eq "disq.us")	or
 	    ($auth eq "dlvr.it")	or
 	    ($auth eq "econ.st")	or	# The Economist
@@ -263,7 +281,9 @@ $unshort = sub{
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
 	    ($auth eq "imrn.me")	or
+	    ($auth eq "josh.re")	or
 	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
+	    ($auth eq "likr.es")	or	# Powered by TribApp
 	    ($auth eq "lnkd.in")	or	# Linkedin
 	    ($auth eq "monk.ly")	or
 	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
@@ -277,33 +297,44 @@ $unshort = sub{
 	    ($auth eq "prsm.tc")	or
 	    ($auth eq "qkme.me")	or	# QuickMeme
 	    ($auth eq "read.bi")	or	# Business Insider
+	    ($auth eq "sbne.ws")	or	# SmartBrief News
+	    ($auth eq "stuf.in")	or	#
 	    ($auth eq "reut.rs")	or	# Reuters
 	    ($auth eq "seen.li")	or	($auth eq "seenthis.net" and $path eq "/index.php")	or # SeenThis, AKA http://seenthis.net/index.php?action=seenli&me=1ing
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
 	    ($auth eq "shrd.by")	or	# sharedby.co "Custom Engagement Bar and Analytics"
 	    ($auth eq "sml8.it")	or
+	    ($auth eq "smrt.in")	or	# Powered by bit.ly
 	    ($auth eq "tcrn.ch")	or	# Techcrunch
 	    ($auth eq "tiny.cc")	or
 	    ($auth eq "trib.al")	or	($auth =~ m/\.trib\.al$/ )	or	# whatever.trib.al is done by SocialFlow
 	    ($auth eq "untp.it")	or	# Untap, via Bitly
+	    ($auth eq "usat.ly")	or	# USA Today
 	    ($auth eq "vrge.co")	or	# The Verge
-	    ($auth eq "yhoo.it")	or	# Yahoo
-	    ($auth eq "xfru.it")	or
 	    ($auth eq "wapo.st")	or	# Washington Post
+	    ($auth eq "xfru.it")	or
 	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
+	    ($auth eq "xure.eu")	or
 	    ($auth eq "xurl.es")	or
+	    ($auth eq "yhoo.it")	or	# Yahoo
 	    ($auth eq "zite.to")	or
 	    ($auth eq "a.eoi.co")	or	# Escuela de Organización Industrial
+	    ($auth eq "a.eoi.es")	or	# Escuela de Organización Industrial
 	    ($auth eq "amzn.com")	or	# Amazon.com
+	    ($auth eq "baixa.ki")	or	# Baixa Ki, brazilian miscellanea agregator
 	    ($auth eq "bloom.bg")	or	# Bloomberg News
 	    ($auth eq "buswk.co")	or	# Business Week
 	    ($auth eq "cultm.ac")	or	# Cult of Mac
 	    ($auth eq "egent.me")	or
+	    ($auth eq "elsab.me")	or
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
 	    ($auth eq "flpbd.it")	or	# Flipboard
-	    ($auth eq "mcmgz.in")	or	# Mac Magazine
+	    ($auth eq "linkd.in")	or	# LinkedIn
+	    ($auth eq "l.r-g.me")	or	# Powered by bit.ly
+	    ($auth eq "maril.in")	or	# Marilink
 	    ($auth eq "mbist.ro")	or	# MediaBistro
+	    ($auth eq "mcmgz.in")	or	# Mac Magazine
 	    ($auth eq "menea.me")	or	# Menéame
 	    ($auth eq "mhoff.me")	or
 	    ($auth eq "migre.me")	or
@@ -311,6 +342,7 @@ $unshort = sub{
 	    ($auth eq "nokia.ly")	or
 	    ($auth eq "on.fb.me")	or
 	    ($auth eq "oreil.ly")	or
+	    ($auth eq "paill.fr")	or	# Powered by bit.ly
 	    ($auth eq "p.ost.im")	or
 	    ($auth eq "pulse.me")	or	($auth eq "www.pulse.me")	or
 	    ($auth eq "qwapo.es")	or
@@ -323,31 +355,39 @@ $unshort = sub{
 	    ($auth eq "slate.me")	or	# The Slate
 #	    ($auth eq "spoti.fi")	or	# Spotify. Not really worth deshortening as the full URL doesn't contain valuable info (track name, etc)
 	    ($auth eq "s.shr.lc")	or	# Shareaholic, bitly-powered
+	    ($auth eq "s.si.edu")	or	# Smithsonian
 	    ($auth eq "s.vfs.ro")	or
+	    ($auth eq "tbbhd.me")	or	# Powered by bit.ly
 	    ($auth eq "tmblr.co")	or	# Tumblr
 	    ($auth eq "twurl.nl")	or
+	    ($auth eq "w.abc.es")	or
 	    ($auth eq "ymlp.com")	or
 #	    ($auth eq "youtu.be")	or	# This one is actually useful: no information is gained by de-shortening.
-	    ($auth eq "w.abc.es")	or
 	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
-	    ($auth eq "keruff.it")	or
 	    ($auth eq "drudge.tw")	or
+	    ($auth eq "keruff.it")	or
 	    ($auth eq "m.safe.mn")	or
+	    ($auth eq "onforb.es")	or	# Forbes
+	    ($auth eq "onion.com")	or	# The Onion
+	    ($auth eq "on.rt.com")	or	# RT
 	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "politi.co")	or	# Politico.com newspaper
-	    ($auth eq "onforb.es")	or	# Forbes
-	    ($auth eq "on.rt.com")	or	# RT
 	    ($auth eq "thebea.st")	or	# The Daily Beast
+	    ($auth eq "wwhts.com")	or	# WWWhatsNew, powered by bit.ly
 	    ($auth eq "eepurl.com")	or
+	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
+	    ($auth eq "oak.ctx.ly")	or
 	    ($auth eq "on.io9.com")	or	# IO9
 	    ($auth eq "on.mash.to")	or	# Mashable
 	    ($auth eq "on.wsj.com")	or	# Wall Street Journal
 	    ($auth eq "theatln.tc")	or	# The Atlantic
 	    ($auth eq "to.pbs.org")	or	# PBS
 	    ($auth eq "tinyurl.com")	or
+	    ($auth eq "trackurl.it")	or
+	    ($auth eq "r.spruse.com")	or	# Powered by bit.ly
 	    ($auth eq "www.tumblr.com")	or
 	    ($auth eq "feeds.gawker.com")	or
 	    ($auth eq "feeds.feedburner.com")	or
@@ -360,12 +400,22 @@ $unshort = sub{
 	    ($auth =~ m/^rss\./)	or	# Will this never end?
 	    ($auth =~ m/^rd\.yahoo\./)	or	# Yahoo feeds... *sigh*
 	    ($auth =~ m/^redirect\./)	or	# redirect.viglink.com and others
+	    ($auth =~ m#.tuu.gs$#)	or	# whatever.tuu.gs powered by Tweet User URL
+	    ($auth =~ m#.sharedby.co$#)	or	# whatever.sharedby.co
 	    ($auth eq "www.google.com" and $path eq "/url")	or	# I hate it when people paste URLs from the stupid google url tracker.
 	    ($auth eq "traffic.shareaholic.com")	or	# Yet another traffic counter
-	    ($path =~ m#^/wf/click# )	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
+	    ($path =~ m#^/wf/click# )	or	# Any URL from *any* server which path starts with /wf/click?upm=foobar has been sent through SendGrid, which collects stats.
+	    ($query =~ m#utm_source=# )	or	# Any URL from *any* server which contains "utm_source=" looks like a social SEO marketing campaign-speech-enabled linkification
+	    ($query =~ m#utm_medium=# )	or	# Any URL from *any* server which contains "utm_medium=" looks like a social SEO marketing campaign-speech-enabled linkification
+	    ($query =~ m#url=http# )	or	# Any URL from *any* server which contains "url=http" looks like a redirector
+	    ($auth eq "www.guardian.co.uk" and $path =~ m#~/p/# )	# Guardian short links, e.g. http://www.guardian.co.uk/p/3fz77/tw
 	    )
 	{
 		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request
+	}
+	elsif ($auth eq "po.st")
+	{
+		$unshorting_method = "GET";	# For these servers, perform a HTTP GET request, hope for a 30* header back. Use for shorteners that fail with HEAD requests.
 	}
 	elsif ($auth eq "www.snsanalytics.com")
 	{
@@ -381,11 +431,12 @@ $unshort = sub{
 		$unshorting_regexp = qr/<iframe .*src=["'](.*?)["'].*>/;
 		$unshorting_thing_were_looking_for = "iframe";
 	}
-	elsif (($auth eq "bota.me")	or
-	       ($auth eq "op.to")	or	($auth eq "www.op.to")
-	       )
+	elsif (($auth eq "bota.me")     or
+	       ($auth eq "op.to")       or      ($auth eq "www.op.to")
+	      )
 	{
 		$unshorting_method = "REGEXP";	# For these servers, look for the first defined javascript snippet with "window.location=foo"
+# 		$unshorting_regexp = qr/window.location\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_regexp = qr/window\.location(\.href)?\s*=\s*["'](.*?)["']\s*;/;
 		$unshorting_thing_were_looking_for = "window.location";
 	}
@@ -403,6 +454,25 @@ $unshort = sub{
 		$unshorting_regexp = qr#<h2 class="postTitleView"><a href="(.*?)"# ;
 # 		<h2 class="postTitleView"><a href="https://www.youtube.com/watch?v=LKtbZvWDhKk" onclick="trackPostClick(3994760072); r
 		$unshorting_thing_were_looking_for = "scoop.it article";
+	}
+	elsif ( $extpref_deshortifyalways )
+	{
+		# Skip some well-known servers that are better to be left shortened.
+		if (
+			(not $auth eq "youtu.be") and	# Full link doesn't add any info
+			(not $auth eq "spoti.fi") and	# Full link doesn't add any info
+			(not $auth eq "4sq.com") and	# Full link doesn't add any info
+			(not $auth eq "flic.kr") and	# Full link doesn't add any info
+			(not $auth =~ m#blogspot.com$#) and	# blogspot.com always redirects to a nearby (geolocated) server
+			(not $auth eq "www.facebook.com") and	# facebook.com will redirect any page to fb.com/unsupportedbrowser due to user-agent
+			(not $auth eq "www.nytimes.com") and	# New York Times articles will only loop till a no cookies page.
+
+			1
+			)
+		{
+			$unshorting_method = "HEAD";
+			$unshorting_override = 1;
+		}
 	}
 
 
@@ -473,15 +543,23 @@ $unshort = sub{
 # 			$url = $response->request->uri;
 			$url = $response->header( "Location" );
 			print "-- Deshortened: $original_url -> $url\n" if ($verbose);
+			print "-- New shortener found: $original_url -> $url\n" if ($unshorting_override);
+
+			# If my header URL starts with a "/", treat it as a relative URL.
+			if ($url =~ m#^/# )
+				{ $url = $scheme . "://" . $auth . $url; } # becomes http://server/$1
+			$newurl =~ s/&amp;/&/;	# Maybe we should escape all HTML entities, but this should suffice.
+
 
 			# Add to cache
 			$deshortify_cache{$original_url} = $url;
 
 			# Let's run the URL again - maybe this is another short link!
-			return &$unshort($url, $extpref_deshortifyretries);
+			if (not $url eq $original_url)
+				{ return &$unshort($url, $extpref_deshortifyretries); }
 		}
 		elsif (not $response->is_success)	# Not a HTTP 20X code
-			{ &$unshort_retry($url, $retries_left, $response->status_line); }
+			{ return &$unshort_retry($url, $retries_left, $response->status_line); }
 
 		# Once we've checked for Location: headers, check for the contents if we're using the REGEXP method )only if the document retrieval has been successful)
 		elsif ($unshorting_method eq "REGEXP")
@@ -498,17 +576,17 @@ $unshort = sub{
 
 				print $stdout "-- Deshortify found an $unshorting_thing_were_looking_for for $url, and it points to $newurl\n" if ($verbose);
 
-				# If my iframe URL starts with a "/", treat it as a relative URL.
+				# If my iframe/javascript/whatever URL starts with a "/", treat it as a relative URL.
 				if ($newurl =~ m#^/# )
 					{ $newurl = $scheme . "://" . $auth . $newurl; } # becomes http://server/$1
-
 				$newurl =~ s/&amp;/&/;	# Maybe we should escape all HTML entities, but this should suffice.
 
 				# Add to cache
 				$deshortify_cache{$original_url} = $newurl;
 
 				# Let's run the URL again - maybe this is another short link!
-				return &$unshort($newurl, $extpref_deshortifyretries);
+				if (not $url eq $newurl)
+					{ return &$unshort($newurl, $extpref_deshortifyretries); }
 			}
 
 			# If no iframes match the regexp above, panic. But just a bit.
@@ -516,7 +594,9 @@ $unshort = sub{
 			return $url;
 		}
 	}
-	else	# Unrecognised server
+
+
+	# Unrecognised server, or no valid response. No need for checking a condition, as a recognised server will already have returned a value.
 	{
 		print $stdout "-- That URL doesn't seem like it's a URL shortener, it must be the real one.\n" if ($superverbose);
 
@@ -548,6 +628,8 @@ $unshort = sub{
 					or ( $auth eq "www.youtube.com" and $name eq "feature")
 					or ( $auth eq "www.nytimes.com" and $name eq "smid" )	# New York Times
 					or ( $auth eq "www.nytimes.com" and $name eq "seid" )	# New York Times
+					or ( $name eq "awesm" )	# Appears as a logger of awesm shortener, at least in storify
+					or ( $name eq "CMP"  and $value eq "twt_gu")	# Guardian.co.uk short links
 					 )
 				{
 					my $expr = quotemeta("$name=$value");	# This prevents strings with "+" to be interpreted as part of the regexp

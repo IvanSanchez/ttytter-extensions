@@ -55,11 +55,19 @@ $handle = sub {
 			if ($bus->{'segundos'} == '999999')
 				{ $minutossegundos = 'más de 20 minutos'; }
 			else
-				{ $minutossegundos = int($bus->{'segundos'} / 60) . ":" . $bus->{'segundos'} % 60; }
-
-			if (length($string) < 140)
 			{
-				$string .= "Bus " . $bus->{'linea'} . " en $minutossegundos\n";
+				my $minutos = int($bus->{'segundos'} / 60);
+				my $segundos = $bus->{'segundos'} % 60;
+				if ($segundos < 10)
+					{ $segundos = "0" . $segundos; }
+				$minutossegundos =  "$minutos:$segundos";
+			}
+
+			my $newstring = $string . "Bus " . $bus->{'linea'} . " en $minutossegundos\n";
+
+			if (length(&descape($newstring)) < 140)
+			{
+				$string = $newstring;
 			}
 			else
 			{
@@ -69,6 +77,7 @@ $handle = sub {
 		}
 
 		print $stdout "-- La respuesta es: $string\n" if ($verbose);
+		print $stdout "-- La respuesta tiene " . length(&descape($string)) . " caracteres\n" if ($verbose);
 		&updatest(&descape($string), 0, $tweet->{'id_str'});
 	}
 

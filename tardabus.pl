@@ -10,7 +10,7 @@
 # Pide los datos a www.cuantotardamiautobus.es/madrid/tiempos.php, que a su vez los pide a la EMT de Madrid
 #
 # Cómo ejecutar:
-# bin/ttytter.pl -keyf=.tardabus -exts=ttytter/tardabus.pl -rc=/dev/null -dostream=1 -ssl=1
+# bin/ttytter.pl -keyf=.tardabus -exts=ttytter/tardabus.pl -rc=/dev/null -dostream=1 -ssl=1 -nodm
 #
 # Cuenta: @TardaBus tardabus@sanchezortega.es
 
@@ -75,6 +75,12 @@ $handle = sub {
 			}
 
 		}
+
+		if ($string eq ("@" . $tweet->{'user'}->{'screen_name'} . "\n"))
+		{
+			$string .= "Actualmente no pasan autobuses por esa parada."
+		}
+
 
 		print $stdout "-- La respuesta es: $string\n" if ($verbose);
 		print $stdout "-- La respuesta tiene " . length(&descape($string)) . " caracteres\n" if ($verbose);

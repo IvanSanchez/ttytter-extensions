@@ -197,6 +197,7 @@ $unshort = sub{
 	    ($auth eq "cgd.to")	or
 	    ($auth eq "chn.ge")	or	# Change.org
 	    ($auth eq "cli.gs")	or
+	    ($auth eq "clp.im")	or	# Powered by auto-tweet
 	    ($auth eq "cor.to")	or
 	    ($auth eq "cos.as")	or
 	    ($auth eq "cot.ag")	or
@@ -207,6 +208,7 @@ $unshort = sub{
 	    ($auth eq "esp.tl") or	# Powered by bitly
 	    ($auth eq "fdl.me")	or
 	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
+	    ($auth eq "fxn.ws") or	# Fox News
 	    ($auth eq "git.io")	or	# GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
 	    ($auth eq "glo.bo")	or	# Brazilian Globo
@@ -216,6 +218,7 @@ $unshort = sub{
 	    ($auth eq "htl.li")	or
 	    ($auth eq "htn.to")	or
 	    ($auth eq "hub.am")	or
+	    ($auth eq "ick.li")	or
 	    ($auth eq "ind.pn")	or	# The Independent.co.uk
 	    ($auth eq "kck.st")	or	# Kickstarter
 	    ($auth eq "kcy.me")	or	# Karmacracy
@@ -225,6 +228,7 @@ $unshort = sub{
 	    ($auth eq "muo.fm")	or	# MakeUseOf
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ngr.nu")	or	# Powered by bit.ly
+	    ($auth eq "nsm.me")	or
 	    ($auth eq "ofa.bo")	or
 	    ($auth eq "osf.to") or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
@@ -234,6 +238,7 @@ $unshort = sub{
 	    ($auth eq "rdd.me") or
 	    ($auth eq "red.ht")	or
 	    ($auth eq "reg.cx")	or
+	    ($auth eq "rlu.ru")	or
 	    ($auth eq "rpx.me")	or	# http://janrain.com, social media company
 	    ($auth eq "rww.to")	or
 	    ($auth eq "sbn.to")	or
@@ -289,6 +294,7 @@ $unshort = sub{
 	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
 	    ($auth eq "nblo.gs")	or	# Networked Blogs
 	    ($auth eq "neow.in")	or	# NeoWin
+	    ($auth eq "note.io")	or
 	    ($auth eq "noti.ca")	or
 	    ($auth eq "nyti.ms")	or	# New York Times
 	    ($auth eq "pear.ly")	or
@@ -304,6 +310,7 @@ $unshort = sub{
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
 	    ($auth eq "shrd.by")	or	# sharedby.co "Custom Engagement Bar and Analytics"
+	    ($auth eq "slnm.us")	or	# Salon
 	    ($auth eq "sml8.it")	or
 	    ($auth eq "smrt.in")	or	# Powered by bit.ly
 	    ($auth eq "tcrn.ch")	or	# Techcrunch
@@ -311,6 +318,7 @@ $unshort = sub{
 	    ($auth eq "trib.al")	or	($auth =~ m/\.trib\.al$/ )	or	# whatever.trib.al is done by SocialFlow
 	    ($auth eq "untp.it")	or	# Untap, via Bitly
 	    ($auth eq "usat.ly")	or	# USA Today
+	    ($auth eq "ves.cat")	or
 	    ($auth eq "vrge.co")	or	# The Verge
 	    ($auth eq "wapo.st")	or	# Washington Post
 	    ($auth eq "xfru.it")	or
@@ -378,6 +386,7 @@ $unshort = sub{
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
+	    ($auth eq "go.usa.gov")	or
 	    ($auth eq "macrumo.rs")	or	# Mac Rumors
 	    ($auth eq "oak.ctx.ly")	or
 	    ($auth eq "on.io9.com")	or	# IO9
@@ -385,6 +394,7 @@ $unshort = sub{
 	    ($auth eq "on.wsj.com")	or	# Wall Street Journal
 	    ($auth eq "theatln.tc")	or	# The Atlantic
 	    ($auth eq "to.pbs.org")	or	# PBS
+	    ($auth eq "go.nasa.gov")	or	# NASA
 	    ($auth eq "tinyurl.com")	or
 	    ($auth eq "trackurl.it")	or
 	    ($auth eq "r.spruse.com")	or	# Powered by bit.ly
@@ -408,7 +418,7 @@ $unshort = sub{
 	    ($query =~ m#utm_source=# )	or	# Any URL from *any* server which contains "utm_source=" looks like a social SEO marketing campaign-speech-enabled linkification
 	    ($query =~ m#utm_medium=# )	or	# Any URL from *any* server which contains "utm_medium=" looks like a social SEO marketing campaign-speech-enabled linkification
 	    ($query =~ m#url=http# )	or	# Any URL from *any* server which contains "url=http" looks like a redirector
-	    ($auth eq "www.guardian.co.uk" and $path =~ m#~/p/# )	# Guardian short links, e.g. http://www.guardian.co.uk/p/3fz77/tw
+	    ($auth eq "www.guardian.co.uk" and $path =~ m#^/p/# )	# Guardian short links, e.g. http://www.guardian.co.uk/p/3fz77/tw
 	    )
 	{
 		$unshorting_method = "HEAD";	# For these servers, perform a HTTP HEAD request
@@ -466,7 +476,6 @@ $unshort = sub{
 			(not $auth =~ m#blogspot.com$#) and	# blogspot.com always redirects to a nearby (geolocated) server
 			(not $auth eq "www.facebook.com") and	# facebook.com will redirect any page to fb.com/unsupportedbrowser due to user-agent
 			(not $auth eq "www.nytimes.com") and	# New York Times articles will only loop till a no cookies page.
-
 			1
 			)
 		{
@@ -486,7 +495,10 @@ $unshort = sub{
 # 			our $deshortify_cache_hit_count;
 			$store->{cache_hit_count} += 1;
 			print $stdout "-- Deshortify cache hit: $url -> " . $deshortify_cache{$original_url} . " ($store->{cache_hit_count} hits)\n" if ($verbose);
-			return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries);
+			if (not $deshortify_cache{$original_url} eq $original_url)
+				{ return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries); }
+			else
+				{ print "-- Detected cached link loop\n"; return $original_url; }
 		}
 
 # 		our $deshortify_cache_empty_counter;
@@ -543,7 +555,20 @@ $unshort = sub{
 # 			$url = $response->request->uri;
 			$url = $response->header( "Location" );
 			print "-- Deshortened: $original_url -> $url\n" if ($verbose);
-			print "-- New shortener found: $original_url -> $url\n" if ($unshorting_override);
+
+			if ($unshorting_override)
+			{
+				# Analise the URLs to check that it looks like a shortener
+# 				($scheme, $auth, $path, $query, $frag) = uri_split($original_url);
+				($scheme_n, $auth_n, $path_n, $query_n, $frag_n) = uri_split($url);
+				if (
+					not ($scheme eq $scheme_n and $path eq $path_n and $query eq $query_n and $frag eq $frag_n)	# Only the server name has changed
+					and not ($scheme eq $scheme_n and $auth eq $auth_n and "$path/" eq $path_n and $query eq $query_n and $frag eq $frag_n)	# A slash has been added to the path
+					)
+					{ print "-- New shortener found: $original_url -> $url\n"; }
+				else
+					{ print "-- False new shortener found: $original_url -> $url\n" if ($superverbose); }
+			}
 
 			# If my header URL starts with a "/", treat it as a relative URL.
 			if ($url =~ m#^/# )

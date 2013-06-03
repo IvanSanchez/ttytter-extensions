@@ -179,6 +179,7 @@ $unshort = sub{
 	    ($auth eq "om.ly")	or
 	    ($auth eq "ow.ly")	or
 # 	    ($auth eq "po.st")	or	# Doesn't allow HTTP HEAD requests, doing GET requests.
+	    ($auth eq "qr.ae")	or	# Quora
 	    ($auth eq "su.pr")	or
 	    ($auth eq "ti.me")	or
 	    ($auth eq "tl.gd")	or	# Twitlonger
@@ -290,8 +291,9 @@ $unshort = sub{
 	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
 	    ($auth eq "likr.es")	or	# Powered by TribApp
 	    ($auth eq "lnkd.in")	or	# Linkedin
+	    ($auth eq "mirr.im")	or	# The Daily Mirror (UK newspaper)
 	    ($auth eq "monk.ly")	or
-	    ($auth eq "mrkt.ms")        or      # MarketMeSuite (SEO platform)
+	    ($auth eq "mrkt.ms")	or	# MarketMeSuite (SEO platform)
 	    ($auth eq "nblo.gs")	or	# Networked Blogs
 	    ($auth eq "neow.in")	or	# NeoWin
 	    ($auth eq "note.io")	or
@@ -371,10 +373,12 @@ $unshort = sub{
 	    ($auth eq "w.abc.es")	or
 	    ($auth eq "ymlp.com")	or
 #	    ($auth eq "youtu.be")	or	# This one is actually useful: no information is gained by de-shortening.
+	    ($auth eq "1.usa.gov")	or	# USA
 	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
 	    ($auth eq "drudge.tw")	or
 	    ($auth eq "keruff.it")	or
+	    ($auth eq "mktfan.es")	or
 	    ($auth eq "m.safe.mn")	or
 	    ($auth eq "onforb.es")	or	# Forbes
 	    ($auth eq "onion.com")	or	# The Onion
@@ -394,6 +398,7 @@ $unshort = sub{
 	    ($auth eq "on.wsj.com")	or	# Wall Street Journal
 	    ($auth eq "theatln.tc")	or	# The Atlantic
 	    ($auth eq "to.pbs.org")	or	# PBS
+	    ($auth eq "esriurl.com")	or	# ESRI
 	    ($auth eq "go.nasa.gov")	or	# NASA
 	    ($auth eq "tinyurl.com")	or
 	    ($auth eq "trackurl.it")	or

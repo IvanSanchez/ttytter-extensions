@@ -10,7 +10,7 @@
 # Pide los datos a www.cuantotardamiautobus.es/madrid/tiempos.php, que a su vez los pide a la EMT de Madrid
 #
 # Cómo ejecutar:
-# bin/ttytter.pl -keyf=.tardabus -exts=ttytter/tardabus.pl -rc=/dev/null -dostream=1 -ssl=1
+# bin/ttytter.pl -keyf=.tardabus -exts=ttytter/tardabus.pl -rc=/dev/null -dostream=1 -ssl=1 -nodm
 #
 # Cuenta: @TardaBus tardabus@sanchezortega.es
 
@@ -55,11 +55,19 @@ $handle = sub {
 			if ($bus->{'segundos'} == '999999')
 				{ $minutossegundos = 'más de 20 minutos'; }
 			else
-				{ $minutossegundos = int($bus->{'segundos'} / 60) . ":" . $bus->{'segundos'} % 60; }
-
-			if (length($string) < 140)
 			{
-				$string .= "Bus " . $bus->{'linea'} . " en $minutossegundos\n";
+				my $minutos = int($bus->{'segundos'} / 60);
+				my $segundos = $bus->{'segundos'} % 60;
+				if ($segundos < 10)
+					{ $segundos = "0" . $segundos; }
+				$minutossegundos =  "$minutos:$segundos";
+			}
+
+			my $newstring = $string . "Bus " . $bus->{'linea'} . " en $minutossegundos\n";
+
+			if (length(&descape($newstring)) < 140)
+			{
+				$string = $newstring;
 			}
 			else
 			{
@@ -68,7 +76,14 @@ $handle = sub {
 
 		}
 
+		if ($string eq ("@" . $tweet->{'user'}->{'screen_name'} . "\n"))
+		{
+			$string .= "Actualmente no pasan autobuses por esa parada."
+		}
+
+
 		print $stdout "-- La respuesta es: $string\n" if ($verbose);
+		print $stdout "-- La respuesta tiene " . length(&descape($string)) . " caracteres\n" if ($verbose);
 		&updatest(&descape($string), 0, $tweet->{'id_str'});
 	}
 

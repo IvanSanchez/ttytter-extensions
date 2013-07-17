@@ -172,6 +172,7 @@ $unshort = sub{
 	    ($auth eq "ed.lc")	or
 	    ($auth eq "es.pn")	or
 	    ($auth eq "fb.me")	or
+	    ($auth eq "fw.to")	or
 	    ($auth eq "ht.ly")	or
 	    ($auth eq "is.gd")	or
 	    ($auth eq "kl.am")	or

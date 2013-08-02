@@ -121,8 +121,8 @@ $unshort_retry = sub{
 
 	if ($retries_left eq 0)
 	{
-		&$exception(32,"*** Could not deshortify $url further due to $reason\n");
-		return $url;
+		&$exception(32, "*** Could not deshortify $url further due to $reason\n");
+		return &$cleanup_url($url);
 	}
 	else
 	{
@@ -132,6 +132,79 @@ $unshort_retry = sub{
 	return 0;
 };
 
+
+
+# Cleans up a URL, stripping off garbage after the URL's hash. Also, prettify URL with underlining.
+# This won't affect useability of the URL.
+$cleanup_url = sub{
+
+    my $url = shift;
+
+    ($scheme, $auth, $path, $query, $frag) = uri_split($url);
+
+
+    # Do some heuristics and try to stave off stupid, spurious crap out of URLs. Like "?utm_source=twitterfeed&utm_medium=twitter
+    # This crap is used for advertisers to track link visits. Screw that!
+
+    # Stuff to cut out: utm_source utm_medium utm_term utm_content utm_campaign (from google's ad campaigns)
+    # Stuff to cut out: spref=tw (from blogger)
+    # Stuff to cut out: ref=tw (from huff post and others)
+    # Stuff to cut out: feature=whatever when on youtube.com
+
+#       print "-- scheme $scheme auth $auth path $path query $query frag $frag\n" if ($verbose);
+    if ($query)
+    {
+        @pairs = split(/&/, $query);
+        foreach $pair (@pairs){
+            ($name, $value) = split(/=/, $pair);
+
+            if ($name eq "utm_source" or $name eq "utm_medium" or $name eq "utm_term" or $name eq "utm_content" or $name eq "utm_campaign"
+                or ( $name eq "tag" and $value eq "as.rss" )
+                or ( $name eq "ref" and $value eq "rss" )
+                or ( $name eq "ref" and $value eq "tw" )
+                or ( $name eq "newsfeed" and $value eq "true" )
+                or ( $name eq "spref" and $value eq "tw" )
+                or ( $name eq "spref" and $value eq "fb" )
+                or ( $name eq "spref" and $value eq "gr" )
+                or ( $name eq "source" and $value eq "twitter" )
+                or ( $name eq "mbid" and $value eq "social_retweet" )   # New Yorker et al
+                or ( $auth eq "www.youtube.com" and $name eq "feature")
+                or ( $auth eq "www.nytimes.com" and $name eq "smid" )   # New York Times
+                or ( $auth eq "www.nytimes.com" and $name eq "seid" )   # New York Times
+                or ( $name eq "awesm" ) # Appears as a logger of awesm shortener, at least in storify
+                or ( $name eq "CMP"  and $value eq "twt_gu")    # Guardian.co.uk short links
+                    )
+            {
+                my $expr = quotemeta("$name=$value");   # This prevents strings with "+" to be interpreted as part of the regexp
+                $query =~ s/($expr)&//;
+                $query =~ s/&($expr)//;
+                $query =~ s/($expr)//;
+                print $stdout "---- Trimming spammy URL parameters: $name = $value - now $query\n" if ($superverbose);
+            }
+        }
+        $url = uri_join($scheme, $auth, $path, $query, $frag);
+    }
+
+#       # Dirty trick to prevent escaped = and & and # to be unescaped (and mess up the query string part) - escape them again!
+#       $url =~ s/%24/%2524/i;  # $
+#       $url =~ s/%26/%2526/i;  # &
+#       $url =~ s/%2B/%252B/i;  # +
+#       $url =~ s/%2C/%252C/i;  # ,
+#       $url =~ s/%2F/%252F/i;  # /
+#       $url =~ s/%3A/%253A/i;  # :
+#       $url =~ s/%3B/%253B/i;  # ;
+#       $url =~ s/%3D/%252B/i;  # =
+#       $url =~ s/%3F/%252B/i;  # ?
+#       $url =~ s/%40/%252B/i;  # @
+
+    # Replace %XX for the corresponding character - makes URLs more compact and legible. Hopefully won't mess anything up.
+    $url =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+    # Waaaait a second, did we just replace "%20" for " "? That'll just mess up things...
+#     $url =~ s/ /+/g;
+    $url =~ s/ /%20/g;
+
+    return ${UNDER} . $url . ${UNDEROFF};
+};
 
 
 
@@ -630,65 +703,7 @@ $unshort = sub{
 	# Unrecognised server, or no valid response. No need for checking a condition, as a recognised server will already have returned a value.
 	{
 		print $stdout "-- That URL doesn't seem like it's a URL shortener, it must be the real one.\n" if ($superverbose);
-
-		# Do some heuristics and try to stave off stupid, spurious crap out of URLs. Like "?utm_source=twitterfeed&utm_medium=twitter
-		# This crap is used for advertisers to track link visits. Screw that!
-
-		# Stuff to cut out: utm_source utm_medium utm_term utm_content utm_campaign (from google's ad campaigns)
-		# Stuff to cut out: spref=tw (from blogger)
-		# Stuff to cut out: ref=tw (from huff post and others)
-		# Stuff to cut out: youtube.com
-
-# 		print "-- scheme $scheme auth $auth path $path query $query frag $frag\n" if ($verbose);
-		if ($query)
-		{
-			@pairs = split(/&/, $query);
-			foreach $pair (@pairs){
-				($name, $value) = split(/=/, $pair);
-
-				if ($name eq "utm_source" or $name eq "utm_medium" or $name eq "utm_term" or $name eq "utm_content" or $name eq "utm_campaign"
-					or ( $name eq "tag" and $value eq "as.rss" )
-					or ( $name eq "ref" and $value eq "rss" )
-					or ( $name eq "ref" and $value eq "tw" )
-					or ( $name eq "newsfeed" and $value eq "true" )
-					or ( $name eq "spref" and $value eq "tw" )
-					or ( $name eq "spref" and $value eq "fb" )
-					or ( $name eq "spref" and $value eq "gr" )
-					or ( $name eq "source" and $value eq "twitter" )
-					or ( $name eq "mbid" and $value eq "social_retweet" )	# New Yorker et al
-					or ( $auth eq "www.youtube.com" and $name eq "feature")
-					or ( $auth eq "www.nytimes.com" and $name eq "smid" )	# New York Times
-					or ( $auth eq "www.nytimes.com" and $name eq "seid" )	# New York Times
-					or ( $name eq "awesm" )	# Appears as a logger of awesm shortener, at least in storify
-					or ( $name eq "CMP"  and $value eq "twt_gu")	# Guardian.co.uk short links
-					 )
-				{
-					my $expr = quotemeta("$name=$value");	# This prevents strings with "+" to be interpreted as part of the regexp
-					$query =~ s/($expr)&//;
-					$query =~ s/&($expr)//;
-					$query =~ s/($expr)//;
-					print $stdout "---- Trimming spammy URL parameters: $name = $value - now $query\n" if ($superverbose);
-				}
-			}
-			$url = uri_join($scheme, $auth, $path, $query, $frag);
-		}
-
-# 		# Dirty trick to prevent escaped = and & and # to be unescaped (and mess up the query string part) - escape them again!
-# 		$url =~ s/%24/%2524/i;	# $
-# 		$url =~ s/%26/%2526/i;	# &
-# 		$url =~ s/%2B/%252B/i;	# +
-# 		$url =~ s/%2C/%252C/i;	# ,
-# 		$url =~ s/%2F/%252F/i;	# /
-# 		$url =~ s/%3A/%253A/i;	# :
-# 		$url =~ s/%3B/%253B/i;	# ;
-# 		$url =~ s/%3D/%252B/i;	# =
-# 		$url =~ s/%3F/%252B/i;	# ?
-# 		$url =~ s/%40/%252B/i;	# @
-
-		# Replace %XX for the corresponding character - makes URLs more compact and legible. Hopefully won't mess anything up.
-		$url =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-		# Waaaait a second, did we just replace "%20" for " "? That'll just mess up things...
-		$url =~ s/ /+/g;
+        return &$cleanup_url($url);
 	}
 
 # 	print $stdout "-- $original_url de-shortened into $url\n" if ($verbose && $url != $original_url) ;

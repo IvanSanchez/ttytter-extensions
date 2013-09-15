@@ -190,6 +190,8 @@ $unshort = sub{
 	    ($auth eq "wp.me")	or	# Wordpress
 	    ($auth eq "adf.ly")	or
 	    ($auth eq "aka.ms")	or	# Microsoft's "Social eXperience Platform"
+	    ($auth eq "ara.tv")	or	# alarabiya.net
+	    ($auth eq "ars.to")	or	# Ars Tecnica
 	    ($auth eq "aol.it")	or	# AOL, America OnLine
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
@@ -231,6 +233,7 @@ $unshort = sub{
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ngr.nu")	or	# Powered by bit.ly
 	    ($auth eq "nsm.me")	or
+	    ($auth eq "nym.ag")	or	# New York Magazine
 	    ($auth eq "ofa.bo")	or
 	    ($auth eq "osf.to") or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
@@ -284,6 +287,7 @@ $unshort = sub{
 	    ($auth eq "engt.co")	or	# Engadget
 # 	    ($auth eq "flic.kr")	or	# Hhhmm, dunno is there's much use in de-shortening to flickr.com anyway.
 	    ($auth eq "flip.it")	or	# Flipboard
+	    ($auth eq "fork.ly")	or	# Forkly.com, although full URL doesn't add any useable info, much like foursquare
 	    ($auth eq "gen.cat")	or	# Generalitat Catalana (catalonian gov't)
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
@@ -324,6 +328,7 @@ $unshort = sub{
 	    ($auth eq "ves.cat")	or
 	    ($auth eq "vrge.co")	or	# The Verge
 	    ($auth eq "wapo.st")	or	# Washington Post
+	    ($auth eq "wrld.bg")	or	# World Bank Blogs
 	    ($auth eq "xfru.it")	or
 	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
 	    ($auth eq "xure.eu")	or
@@ -370,6 +375,7 @@ $unshort = sub{
 	    ($auth eq "s.vfs.ro")	or
 	    ($auth eq "tbbhd.me")	or	# Powered by bit.ly
 	    ($auth eq "tmblr.co")	or	# Tumblr
+	    ($auth eq "thkpr.gs")	or	# ThinkProgress.org
 	    ($auth eq "twurl.nl")	or
 	    ($auth eq "w.abc.es")	or
 	    ($auth eq "ymlp.com")	or
@@ -387,6 +393,7 @@ $unshort = sub{
 	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "thebea.st")	or	# The Daily Beast
+	    ($auth eq "urlads.co")	or	
 	    ($auth eq "wwhts.com")	or	# WWWhatsNew, powered by bit.ly
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)

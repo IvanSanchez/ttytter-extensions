@@ -67,7 +67,12 @@ elsif ( $ENV{http_proxy} or $ENV{https_proxy} )
 
 if (not $extpref_deshortifyretries)
 {
-	$extpref_deshortifyretries = 3;
+    $extpref_deshortifyretries = 3;
+}
+
+if (not $extpref_deshortifyloopdetect)
+{
+    $extpref_deshortifyloopdetect = 20;
 }
 
 require URI::Find;
@@ -127,7 +132,7 @@ $unshort_retry = sub{
 	else
 	{
 		print $stdout "-- Deshortify failed for $url due to $reason, retrying ($retries_left retries left)\n" if ($verbose);
-		return &$unshort($url, $retries_left-1);
+		return &$unshort($url, $retries_left-1, $extpref_deshortifyloopdetect);
 	}
 	return 0;
 };
@@ -219,7 +224,8 @@ $unshort = sub{
 # 	our $deshortify_cache;
 	our $store;
 	my $url = shift;
-	my $retries_left = shift;
+    my $retries_left = shift;
+    my $loop_detect = shift;
 
 	my $original_url = $url;
 
@@ -233,7 +239,8 @@ $unshort = sub{
 	my $unshorting_override = 0;
 
 	# Gathered a few shorteners. Should not be considered as a comprehensive list, but it'll do.
-	if (($auth eq "g.co")	or	# Google
+	if (($path =~ m#^/p/#)  or  # Generic short links
+        ($auth eq "g.co")	or	# Google
 	    ($auth eq "j.mp")	or
 	    ($auth eq "q.gs")	or
 	    ($auth eq "n.pr")	or	# NPR, National Public Radio (USA)
@@ -286,16 +293,18 @@ $unshort = sub{
 	    ($auth eq "fdl.me")	or
 	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "fxn.ws") or	# Fox News
-	    ($auth eq "git.io")	or	# GitHub
+        ($auth eq "git.io") or  # GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
 	    ($auth eq "glo.bo")	or	# Brazilian Globo
 	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "grn.bz")	or
+        ($auth eq "gtg.lu") or  # GetGlue (TV shows)
 	    ($auth eq "gu.com")	or	# The Guardian
 	    ($auth eq "htl.li")	or
 	    ($auth eq "htn.to")	or
 	    ($auth eq "hub.am")	or
-	    ($auth eq "ick.li")	or
+        ($auth eq "ick.li") or
+        ($auth eq "ift.tt") or  # If This Then That
 	    ($auth eq "ind.pn")	or	# The Independent.co.uk
 	    ($auth eq "kck.st")	or	# Kickstarter
 	    ($auth eq "kcy.me")	or	# Karmacracy
@@ -341,13 +350,16 @@ $unshort = sub{
 	    ($auth eq "ur1.ca")	or
 	    ($auth eq "vsb.li")	or
 	    ($auth eq "vsb.ly")	or
-	    ($auth eq "wh.gov")	or	# Whitehouse.gov
+        ($auth eq "wh.gov") or  # Whitehouse.gov
+	    ($auth eq "29g.us")	or
 	    ($auth eq "6sen.se")	or
 	    ($auth eq "amba.to")	or	# Ameba.jp
 	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "apne.ws")	or	# AP news
 	    ($auth eq "buff.ly")	or
-	    ($auth eq "clic.bz")	or	# Powered by bit.ly
+	    ($auth eq "buzz.mw")	or
+	    ($auth eq "chzb.gr")	or	# Cheezburguer network
+        ($auth eq "clic.bz")    or  # Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
 	    ($auth eq "cort.as")	or
 	    ($auth eq "cutv.ws")	or	# cultureunplugged.com
@@ -369,14 +381,16 @@ $unshort = sub{
 	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
 	    ($auth eq "likr.es")	or	# Powered by TribApp
 	    ($auth eq "lnkd.in")	or	# Linkedin
-	    ($auth eq "mirr.im")	or	# The Daily Mirror (UK newspaper)
+	    ($auth eq "mdia.st")	or	# Mediaset (spanish TV station)
+        ($auth eq "mirr.im")    or  # The Daily Mirror (UK newspaper)
 	    ($auth eq "monk.ly")	or
 	    ($auth eq "mrkt.ms")	or	# MarketMeSuite (SEO platform)
 	    ($auth eq "nblo.gs")	or	# Networked Blogs
 	    ($auth eq "neow.in")	or	# NeoWin
 	    ($auth eq "note.io")	or
 	    ($auth eq "noti.ca")	or
-	    ($auth eq "nyti.ms")	or	# New York Times
+        ($auth eq "nyti.ms")    or  # New York Times
+	    ($auth eq "nzzl.me")	or
 	    ($auth eq "pear.ly")	or
 	    ($auth eq "post.ly")	or	# Posterous
 	    ($auth eq "ppfr.it")	or
@@ -385,7 +399,8 @@ $unshort = sub{
 	    ($auth eq "read.bi")	or	# Business Insider
 	    ($auth eq "sbne.ws")	or	# SmartBrief News
 	    ($auth eq "stuf.in")	or	#
-	    ($auth eq "reut.rs")	or	# Reuters
+	    ($auth eq "redd.it")	or	($auth eq "www.reddit.com" and $path =~ m#^/tb/#)   or  # Reddit
+        ($auth eq "reut.rs")    or  # Reuters
 	    ($auth eq "seen.li")	or	($auth eq "seenthis.net" and $path eq "/index.php")	or # SeenThis, AKA http://seenthis.net/index.php?action=seenli&me=1ing
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
@@ -418,7 +433,8 @@ $unshort = sub{
 	    ($auth eq "egent.me")	or
 	    ($auth eq "elsab.me")	or
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
-	    ($auth eq "flpbd.it")	or	# Flipboard
+        ($auth eq "flpbd.it")   or  # Flipboard
+	    ($auth eq "gizmo.do")	or	# Gizmodo
 	    ($auth eq "linkd.in")	or	# LinkedIn
 	    ($auth eq "l.r-g.me")	or	# Powered by bit.ly
 	    ($auth eq "maril.in")	or	# Marilink
@@ -456,7 +472,7 @@ $unshort = sub{
 	    ($auth eq "1.usa.gov")	or	# USA
 	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
-	    ($auth eq "drudge.tw")	or
+        ($auth eq "drudge.tw")  or
 	    ($auth eq "keruff.it")	or
 	    ($auth eq "mktfan.es")	or
 	    ($auth eq "m.safe.mn")	or
@@ -467,7 +483,9 @@ $unshort = sub{
 	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "thebea.st")	or	# The Daily Beast
 	    ($auth eq "urlads.co")	or	
-	    ($auth eq "wwhts.com")	or	# WWWhatsNew, powered by bit.ly
+	    ($auth eq "wlstrm.me")	or	# Jeff Walstrom
+        ($auth eq "wwhts.com")  or  # WWWhatsNew, powered by bit.ly
+        ($auth eq "dnlchw.net") or
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
@@ -570,6 +588,13 @@ $unshort = sub{
 		}
 	}
 
+	if ($loop_detect < 1)
+	{
+        $unshorting_method=none;
+        &$exception(33, "*** Detected deep link loop in $original_url\n");
+        return &$cleanup_url($original_url);
+    }
+
 
 	if (not $unshorting_method eq none)
 	{
@@ -582,9 +607,10 @@ $unshort = sub{
 			$store->{cache_hit_count} += 1;
 			print $stdout "-- Deshortify cache hit: $url -> " . $deshortify_cache{$original_url} . " ($store->{cache_hit_count} hits)\n" if ($verbose);
 			if (not $deshortify_cache{$original_url} eq $original_url)
-				{ return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries); }
+				{ return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries, $loop_detect -1); }
 			else
-				{ print "-- Detected cached link loop\n"; return $original_url; }
+				{ &$exception(33,"-- Detected cached link loop\n"); return &$cleanup_url($original_url);
+}
 		}
 
 # 		our $deshortify_cache_empty_counter;
@@ -667,7 +693,7 @@ $unshort = sub{
 
 			# Let's run the URL again - maybe this is another short link!
 			if (not $url eq $original_url)
-				{ return &$unshort($url, $extpref_deshortifyretries); }
+				{ return &$unshort($url, $extpref_deshortifyretries, $loop_detect -1); }
 		}
 		elsif (not $response->is_success)	# Not a HTTP 20X code
 			{ return &$unshort_retry($url, $retries_left, $response->status_line); }
@@ -697,7 +723,7 @@ $unshort = sub{
 
 				# Let's run the URL again - maybe this is another short link!
 				if (not $url eq $newurl)
-					{ return &$unshort($newurl, $extpref_deshortifyretries); }
+					{ return &$unshort($newurl, $extpref_deshortifyretries, $loop_detect -1); }
 			}
 
 			# If no iframes match the regexp above, panic. But just a bit.
@@ -745,7 +771,7 @@ $dmhandle = $handle = sub {
 	$text =~ s/\\nhttp:\/\//\\n http:\/\//g;
 
 	# Any URIs you find, run them through unshort()...
-	my $finder = URI::Find->new(sub { &$unshort($_[0], $extpref_deshortifyretries) });
+	my $finder = URI::Find->new(sub { &$unshort($_[0], $extpref_deshortifyretries, $extpref_deshortifyloopdetect) });
 
 	$how_many_found = $finder->find(\$text);
 

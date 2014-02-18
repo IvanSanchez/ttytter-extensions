@@ -221,6 +221,7 @@ $unshort = sub{
 	    ($auth eq "htn.to")	or
 	    ($auth eq "hub.am")	or
 	    ($auth eq "ick.li")	or
+	    ($auth eq "ift.tt")	or	# If This Then That
 	    ($auth eq "ind.pn")	or	# The Independent.co.uk
 	    ($auth eq "kck.st")	or	# Kickstarter
 	    ($auth eq "kcy.me")	or	# Karmacracy

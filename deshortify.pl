@@ -67,7 +67,12 @@ elsif ( $ENV{http_proxy} or $ENV{https_proxy} )
 
 if (not $extpref_deshortifyretries)
 {
-	$extpref_deshortifyretries = 3;
+    $extpref_deshortifyretries = 3;
+}
+
+if (not $extpref_deshortifyloopdetect)
+{
+    $extpref_deshortifyloopdetect = 20;
 }
 
 require URI::Find;
@@ -121,17 +126,90 @@ $unshort_retry = sub{
 
 	if ($retries_left eq 0)
 	{
-		&$exception(32,"*** Could not deshortify $url further due to $reason\n");
-		return $url;
+		&$exception(32, "*** Could not deshortify $url further due to $reason\n");
+		return &$cleanup_url($url);
 	}
 	else
 	{
 		print $stdout "-- Deshortify failed for $url due to $reason, retrying ($retries_left retries left)\n" if ($verbose);
-		return &$unshort($url, $retries_left-1);
+		return &$unshort($url, $retries_left-1, $extpref_deshortifyloopdetect);
 	}
 	return 0;
 };
 
+
+
+# Cleans up a URL, stripping off garbage after the URL's hash. Also, prettify URL with underlining.
+# This won't affect useability of the URL.
+$cleanup_url = sub{
+
+    my $url = shift;
+
+    ($scheme, $auth, $path, $query, $frag) = uri_split($url);
+
+
+    # Do some heuristics and try to stave off stupid, spurious crap out of URLs. Like "?utm_source=twitterfeed&utm_medium=twitter
+    # This crap is used for advertisers to track link visits. Screw that!
+
+    # Stuff to cut out: utm_source utm_medium utm_term utm_content utm_campaign (from google's ad campaigns)
+    # Stuff to cut out: spref=tw (from blogger)
+    # Stuff to cut out: ref=tw (from huff post and others)
+    # Stuff to cut out: feature=whatever when on youtube.com
+
+#       print "-- scheme $scheme auth $auth path $path query $query frag $frag\n" if ($verbose);
+    if ($query)
+    {
+        @pairs = split(/&/, $query);
+        foreach $pair (@pairs){
+            ($name, $value) = split(/=/, $pair);
+
+            if ($name eq "utm_source" or $name eq "utm_medium" or $name eq "utm_term" or $name eq "utm_content" or $name eq "utm_campaign"
+                or ( $name eq "tag" and $value eq "as.rss" )
+                or ( $name eq "ref" and $value eq "rss" )
+                or ( $name eq "ref" and $value eq "tw" )
+                or ( $name eq "newsfeed" and $value eq "true" )
+                or ( $name eq "spref" and $value eq "tw" )
+                or ( $name eq "spref" and $value eq "fb" )
+                or ( $name eq "spref" and $value eq "gr" )
+                or ( $name eq "source" and $value eq "twitter" )
+                or ( $name eq "mbid" and $value eq "social_retweet" )   # New Yorker et al
+                or ( $auth eq "www.youtube.com" and $name eq "feature")
+                or ( $auth eq "www.nytimes.com" and $name eq "smid" )   # New York Times
+                or ( $auth eq "www.nytimes.com" and $name eq "seid" )   # New York Times
+                or ( $name eq "awesm" ) # Appears as a logger of awesm shortener, at least in storify
+                or ( $name eq "CMP"  and $value eq "twt_gu")    # Guardian.co.uk short links
+                    )
+            {
+                my $expr = quotemeta("$name=$value");   # This prevents strings with "+" to be interpreted as part of the regexp
+                $query =~ s/($expr)&//;
+                $query =~ s/&($expr)//;
+                $query =~ s/($expr)//;
+                print $stdout "---- Trimming spammy URL parameters: $name = $value - now $query\n" if ($superverbose);
+            }
+        }
+        $url = uri_join($scheme, $auth, $path, $query, $frag);
+    }
+
+#       # Dirty trick to prevent escaped = and & and # to be unescaped (and mess up the query string part) - escape them again!
+#       $url =~ s/%24/%2524/i;  # $
+#       $url =~ s/%26/%2526/i;  # &
+#       $url =~ s/%2B/%252B/i;  # +
+#       $url =~ s/%2C/%252C/i;  # ,
+#       $url =~ s/%2F/%252F/i;  # /
+#       $url =~ s/%3A/%253A/i;  # :
+#       $url =~ s/%3B/%253B/i;  # ;
+#       $url =~ s/%3D/%252B/i;  # =
+#       $url =~ s/%3F/%252B/i;  # ?
+#       $url =~ s/%40/%252B/i;  # @
+
+    # Replace %XX for the corresponding character - makes URLs more compact and legible. Hopefully won't mess anything up.
+    $url =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+    # Waaaait a second, did we just replace "%20" for " "? That'll just mess up things...
+#     $url =~ s/ /+/g;
+    $url =~ s/ /%20/g;
+
+    return ${UNDER} . $url . ${UNDEROFF};
+};
 
 
 
@@ -146,7 +224,8 @@ $unshort = sub{
 # 	our $deshortify_cache;
 	our $store;
 	my $url = shift;
-	my $retries_left = shift;
+    my $retries_left = shift;
+    my $loop_detect = shift;
 
 	my $original_url = $url;
 
@@ -160,7 +239,8 @@ $unshort = sub{
 	my $unshorting_override = 0;
 
 	# Gathered a few shorteners. Should not be considered as a comprehensive list, but it'll do.
-	if (($auth eq "g.co")	or	# Google
+	if (($path =~ m#^/p/#)  or  # Generic short links
+        ($auth eq "g.co")	or	# Google
 	    ($auth eq "j.mp")	or
 	    ($auth eq "q.gs")	or
 	    ($auth eq "n.pr")	or	# NPR, National Public Radio (USA)
@@ -190,6 +270,8 @@ $unshort = sub{
 	    ($auth eq "wp.me")	or	# Wordpress
 	    ($auth eq "adf.ly")	or
 	    ($auth eq "aka.ms")	or	# Microsoft's "Social eXperience Platform"
+	    ($auth eq "ara.tv")	or	# alarabiya.net
+	    ($auth eq "ars.to")	or	# Ars Tecnica
 	    ($auth eq "aol.it")	or	# AOL, America OnLine
 	    ($auth eq "awe.sm")	or
 	    ($auth eq "bbc.in")	or	# bbc.co.uk
@@ -211,11 +293,12 @@ $unshort = sub{
 	    ($auth eq "fdl.me")	or
 	    ($auth eq "fon.gs") or	# Fon Get Simple (By the fon.com guys)
 	    ($auth eq "fxn.ws") or	# Fox News
-	    ($auth eq "git.io")	or	# GitHub
+        ($auth eq "git.io") or  # GitHub
 	    ($auth eq "gkl.st")	or	# GeekList
 	    ($auth eq "glo.bo")	or	# Brazilian Globo
 	    ($auth eq "goo.gl")	or	# Google
 	    ($auth eq "grn.bz")	or
+        ($auth eq "gtg.lu") or  # GetGlue (TV shows)
 	    ($auth eq "gu.com")	or	# The Guardian
 	    ($auth eq "htl.li")	or
 	    ($auth eq "htn.to")	or
@@ -232,6 +315,7 @@ $unshort = sub{
 	    ($auth eq "mzl.la")	or	# Mozilla
 	    ($auth eq "ngr.nu")	or	# Powered by bit.ly
 	    ($auth eq "nsm.me")	or
+	    ($auth eq "nym.ag")	or	# New York Magazine
 	    ($auth eq "ofa.bo")	or
 	    ($auth eq "osf.to") or	# Open Society Foundation
 	    ($auth eq "owl.li")	or
@@ -266,13 +350,16 @@ $unshort = sub{
 	    ($auth eq "ur1.ca")	or
 	    ($auth eq "vsb.li")	or
 	    ($auth eq "vsb.ly")	or
-	    ($auth eq "wh.gov")	or	# Whitehouse.gov
+        ($auth eq "wh.gov") or  # Whitehouse.gov
+	    ($auth eq "29g.us")	or
 	    ($auth eq "6sen.se")	or
 	    ($auth eq "amba.to")	or	# Ameba.jp
 	    ($auth eq "amzn.to")	or	# Amazon.com
 	    ($auth eq "apne.ws")	or	# AP news
 	    ($auth eq "buff.ly")	or
-	    ($auth eq "clic.bz")	or	# Powered by bit.ly
+	    ($auth eq "buzz.mw")	or
+	    ($auth eq "chzb.gr")	or	# Cheezburguer network
+        ($auth eq "clic.bz")    or  # Powered by bit.ly
 	    ($auth eq "cnet.co")	or	# C-Net
 	    ($auth eq "cort.as")	or
 	    ($auth eq "cutv.ws")	or	# cultureunplugged.com
@@ -285,6 +372,7 @@ $unshort = sub{
 	    ($auth eq "engt.co")	or	# Engadget
 # 	    ($auth eq "flic.kr")	or	# Hhhmm, dunno is there's much use in de-shortening to flickr.com anyway.
 	    ($auth eq "flip.it")	or	# Flipboard
+	    ($auth eq "fork.ly")	or	# Forkly.com, although full URL doesn't add any useable info, much like foursquare
 	    ($auth eq "gen.cat")	or	# Generalitat Catalana (catalonian gov't)
 	    ($auth eq "hint.fm")	or
 	    ($auth eq "huff.to")	or	# The Huffington Post
@@ -293,14 +381,16 @@ $unshort = sub{
 	    ($auth eq "jrnl.to")	or	# Powered by bit.ly
 	    ($auth eq "likr.es")	or	# Powered by TribApp
 	    ($auth eq "lnkd.in")	or	# Linkedin
-	    ($auth eq "mirr.im")	or	# The Daily Mirror (UK newspaper)
+	    ($auth eq "mdia.st")	or	# Mediaset (spanish TV station)
+        ($auth eq "mirr.im")    or  # The Daily Mirror (UK newspaper)
 	    ($auth eq "monk.ly")	or
 	    ($auth eq "mrkt.ms")	or	# MarketMeSuite (SEO platform)
 	    ($auth eq "nblo.gs")	or	# Networked Blogs
 	    ($auth eq "neow.in")	or	# NeoWin
 	    ($auth eq "note.io")	or
 	    ($auth eq "noti.ca")	or
-	    ($auth eq "nyti.ms")	or	# New York Times
+        ($auth eq "nyti.ms")    or  # New York Times
+	    ($auth eq "nzzl.me")	or
 	    ($auth eq "pear.ly")	or
 	    ($auth eq "post.ly")	or	# Posterous
 	    ($auth eq "ppfr.it")	or
@@ -309,7 +399,8 @@ $unshort = sub{
 	    ($auth eq "read.bi")	or	# Business Insider
 	    ($auth eq "sbne.ws")	or	# SmartBrief News
 	    ($auth eq "stuf.in")	or	#
-	    ($auth eq "reut.rs")	or	# Reuters
+	    ($auth eq "redd.it")	or	($auth eq "www.reddit.com" and $path =~ m#^/tb/#)   or  # Reddit
+        ($auth eq "reut.rs")    or  # Reuters
 	    ($auth eq "seen.li")	or	($auth eq "seenthis.net" and $path eq "/index.php")	or # SeenThis, AKA http://seenthis.net/index.php?action=seenli&me=1ing
 	    ($auth eq "seod.co")	or
 	    ($auth eq "shar.es")	or
@@ -325,6 +416,7 @@ $unshort = sub{
 	    ($auth eq "ves.cat")	or
 	    ($auth eq "vrge.co")	or	# The Verge
 	    ($auth eq "wapo.st")	or	# Washington Post
+	    ($auth eq "wrld.bg")	or	# World Bank Blogs
 	    ($auth eq "xfru.it")	or
 	    ($auth eq "xfru.it")	or	($auth eq "www.xfru.it")	or
 	    ($auth eq "xure.eu")	or
@@ -341,7 +433,8 @@ $unshort = sub{
 	    ($auth eq "egent.me")	or
 	    ($auth eq "elsab.me")	or
 # 	    ($auth eq "enwp.org")	or	# English Wikipedia. Not really worth deshortening.
-	    ($auth eq "flpbd.it")	or	# Flipboard
+        ($auth eq "flpbd.it")   or  # Flipboard
+	    ($auth eq "gizmo.do")	or	# Gizmodo
 	    ($auth eq "linkd.in")	or	# LinkedIn
 	    ($auth eq "l.r-g.me")	or	# Powered by bit.ly
 	    ($auth eq "maril.in")	or	# Marilink
@@ -371,6 +464,7 @@ $unshort = sub{
 	    ($auth eq "s.vfs.ro")	or
 	    ($auth eq "tbbhd.me")	or	# Powered by bit.ly
 	    ($auth eq "tmblr.co")	or	# Tumblr
+	    ($auth eq "thkpr.gs")	or	# ThinkProgress.org
 	    ($auth eq "twurl.nl")	or
 	    ($auth eq "w.abc.es")	or
 	    ($auth eq "ymlp.com")	or
@@ -378,7 +472,7 @@ $unshort = sub{
 	    ($auth eq "1.usa.gov")	or	# USA
 	    ($auth eq "binged.it")	or	# Microsoft goes Bing!. Bing!
 	    ($auth eq "bitly.com")	or
-	    ($auth eq "drudge.tw")	or
+        ($auth eq "drudge.tw")  or
 	    ($auth eq "keruff.it")	or
 	    ($auth eq "mktfan.es")	or
 	    ($auth eq "m.safe.mn")	or
@@ -388,7 +482,10 @@ $unshort = sub{
 	    ($auth eq "pocket.co")	or	($auth eq "getpocket.com" and $path =~ m#^/s#)	or	# GetPocket, also known as ReadItLater
 	    ($auth eq "politi.co")	or	# Politico.com newspaper
 	    ($auth eq "thebea.st")	or	# The Daily Beast
-	    ($auth eq "wwhts.com")	or	# WWWhatsNew, powered by bit.ly
+	    ($auth eq "urlads.co")	or	
+	    ($auth eq "wlstrm.me")	or	# Jeff Walstrom
+        ($auth eq "wwhts.com")  or  # WWWhatsNew, powered by bit.ly
+        ($auth eq "dnlchw.net") or
 	    ($auth eq "eepurl.com")	or
 	    ($auth eq "elconfi.de")	or	# El Confidencial (spanish newspaper)
 	    ($auth eq "feedly.com")	or
@@ -491,6 +588,13 @@ $unshort = sub{
 		}
 	}
 
+	if ($loop_detect < 1)
+	{
+        $unshorting_method=none;
+        &$exception(33, "*** Detected deep link loop in $original_url\n");
+        return &$cleanup_url($original_url);
+    }
+
 
 	if (not $unshorting_method eq none)
 	{
@@ -503,9 +607,10 @@ $unshort = sub{
 			$store->{cache_hit_count} += 1;
 			print $stdout "-- Deshortify cache hit: $url -> " . $deshortify_cache{$original_url} . " ($store->{cache_hit_count} hits)\n" if ($verbose);
 			if (not $deshortify_cache{$original_url} eq $original_url)
-				{ return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries); }
+				{ return &$unshort($deshortify_cache{$original_url}, $extpref_deshortifyretries, $loop_detect -1); }
 			else
-				{ print "-- Detected cached link loop\n"; return $original_url; }
+				{ &$exception(33,"-- Detected cached link loop\n"); return &$cleanup_url($original_url);
+}
 		}
 
 # 		our $deshortify_cache_empty_counter;
@@ -588,7 +693,7 @@ $unshort = sub{
 
 			# Let's run the URL again - maybe this is another short link!
 			if (not $url eq $original_url)
-				{ return &$unshort($url, $extpref_deshortifyretries); }
+				{ return &$unshort($url, $extpref_deshortifyretries, $loop_detect -1); }
 		}
 		elsif (not $response->is_success)	# Not a HTTP 20X code
 			{ return &$unshort_retry($url, $retries_left, $response->status_line); }
@@ -618,7 +723,7 @@ $unshort = sub{
 
 				# Let's run the URL again - maybe this is another short link!
 				if (not $url eq $newurl)
-					{ return &$unshort($newurl, $extpref_deshortifyretries); }
+					{ return &$unshort($newurl, $extpref_deshortifyretries, $loop_detect -1); }
 			}
 
 			# If no iframes match the regexp above, panic. But just a bit.
@@ -631,65 +736,7 @@ $unshort = sub{
 	# Unrecognised server, or no valid response. No need for checking a condition, as a recognised server will already have returned a value.
 	{
 		print $stdout "-- That URL doesn't seem like it's a URL shortener, it must be the real one.\n" if ($superverbose);
-
-		# Do some heuristics and try to stave off stupid, spurious crap out of URLs. Like "?utm_source=twitterfeed&utm_medium=twitter
-		# This crap is used for advertisers to track link visits. Screw that!
-
-		# Stuff to cut out: utm_source utm_medium utm_term utm_content utm_campaign (from google's ad campaigns)
-		# Stuff to cut out: spref=tw (from blogger)
-		# Stuff to cut out: ref=tw (from huff post and others)
-		# Stuff to cut out: youtube.com
-
-# 		print "-- scheme $scheme auth $auth path $path query $query frag $frag\n" if ($verbose);
-		if ($query)
-		{
-			@pairs = split(/&/, $query);
-			foreach $pair (@pairs){
-				($name, $value) = split(/=/, $pair);
-
-				if ($name eq "utm_source" or $name eq "utm_medium" or $name eq "utm_term" or $name eq "utm_content" or $name eq "utm_campaign"
-					or ( $name eq "tag" and $value eq "as.rss" )
-					or ( $name eq "ref" and $value eq "rss" )
-					or ( $name eq "ref" and $value eq "tw" )
-					or ( $name eq "newsfeed" and $value eq "true" )
-					or ( $name eq "spref" and $value eq "tw" )
-					or ( $name eq "spref" and $value eq "fb" )
-					or ( $name eq "spref" and $value eq "gr" )
-					or ( $name eq "source" and $value eq "twitter" )
-					or ( $name eq "mbid" and $value eq "social_retweet" )	# New Yorker et al
-					or ( $auth eq "www.youtube.com" and $name eq "feature")
-					or ( $auth eq "www.nytimes.com" and $name eq "smid" )	# New York Times
-					or ( $auth eq "www.nytimes.com" and $name eq "seid" )	# New York Times
-					or ( $name eq "awesm" )	# Appears as a logger of awesm shortener, at least in storify
-					or ( $name eq "CMP"  and $value eq "twt_gu")	# Guardian.co.uk short links
-					 )
-				{
-					my $expr = quotemeta("$name=$value");	# This prevents strings with "+" to be interpreted as part of the regexp
-					$query =~ s/($expr)&//;
-					$query =~ s/&($expr)//;
-					$query =~ s/($expr)//;
-					print $stdout "---- Trimming spammy URL parameters: $name = $value - now $query\n" if ($superverbose);
-				}
-			}
-			$url = uri_join($scheme, $auth, $path, $query, $frag);
-		}
-
-# 		# Dirty trick to prevent escaped = and & and # to be unescaped (and mess up the query string part) - escape them again!
-# 		$url =~ s/%24/%2524/i;	# $
-# 		$url =~ s/%26/%2526/i;	# &
-# 		$url =~ s/%2B/%252B/i;	# +
-# 		$url =~ s/%2C/%252C/i;	# ,
-# 		$url =~ s/%2F/%252F/i;	# /
-# 		$url =~ s/%3A/%253A/i;	# :
-# 		$url =~ s/%3B/%253B/i;	# ;
-# 		$url =~ s/%3D/%252B/i;	# =
-# 		$url =~ s/%3F/%252B/i;	# ?
-# 		$url =~ s/%40/%252B/i;	# @
-
-		# Replace %XX for the corresponding character - makes URLs more compact and legible. Hopefully won't mess anything up.
-		$url =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-		# Waaaait a second, did we just replace "%20" for " "? That'll just mess up things...
-		$url =~ s/ /+/g;
+        return &$cleanup_url($url);
 	}
 
 # 	print $stdout "-- $original_url de-shortened into $url\n" if ($verbose && $url != $original_url) ;
@@ -724,7 +771,7 @@ $dmhandle = $handle = sub {
 	$text =~ s/\\nhttp:\/\//\\n http:\/\//g;
 
 	# Any URIs you find, run them through unshort()...
-	my $finder = URI::Find->new(sub { &$unshort($_[0], $extpref_deshortifyretries) });
+	my $finder = URI::Find->new(sub { &$unshort($_[0], $extpref_deshortifyretries, $extpref_deshortifyloopdetect) });
 
 	$how_many_found = $finder->find(\$text);
 

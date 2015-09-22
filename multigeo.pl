@@ -580,7 +580,13 @@ $handle = sub {
 	&defaulthandle($tweet);
 
 
-	if ($tweet->{'user'}->{'geo_enabled'} eq 'true' && $tweet->{'geo'}->{'coordinates'}->[0] ne 'undef')
+	if ($tweet->{'user'}->{'geo_enabled'} eq 'true'
+		&& $tweet->{'geo'}->{'coordinates'}->[0] ne undef
+		&& $tweet->{'geo'}->{'coordinates'}->[1] ne undef
+		&& $tweet->{'geo'}->{'coordinates'}->[0] ne 'undef'
+		&& $tweet->{'geo'}->{'coordinates'}->[1] ne 'undef'
+		&& ($tweet->{'geo'}->{'coordinates'}->[0] ne 0 || $tweet->{'geo'}->{'coordinates'}->[1] ne 0)
+		)
 	{
 # 		If tweet has coordinates, call the (selected) geocoder.
 
@@ -589,6 +595,8 @@ $handle = sub {
 
 		my $tw_lat = $tweet->{'geo'}->{'coordinates'}->[0];
 		my $tw_lon = $tweet->{'geo'}->{'coordinates'}->[1];
+
+# 		print $stdout "-- Debug Geocoder coordinates: " . Dumper($tweet->{'geo'}) . Dumper($tw_lat) . "," . Dumper($tw_lon) . "\n";
 
 		if ($geocoder_cache{$tw_lat.",".$tw_lon})
 		{
